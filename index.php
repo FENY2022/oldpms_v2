@@ -6,6 +6,11 @@
     <title>O-LDPMS | Online Lumber Dealer Permitting & Monitoring System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" href="logo/denr_logo.png" type="image/x-icon">
+    <link rel="icon" type="logo/denr_logo.png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="logo/denr_logo.png" sizes="16x16" href="favicon-16x16.png">
+
+    <meta name="theme-color" content="#064e3b">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -213,3 +218,5 @@
 
 </body>
 </html>
+
+
