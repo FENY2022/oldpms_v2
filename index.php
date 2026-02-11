@@ -7,14 +7,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="icon" href="logo/denr_logo.png" type="image/x-icon">
-    <link rel="icon" type="logo/denr_logo.png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="logo/denr_logo.png" sizes="16x16" href="favicon-16x16.png">
-
+    
     <meta name="theme-color" content="#064e3b">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .bg-denr { background-color: #064e3b; } /* Deep Forest Green */
+        .bg-denr { background-color: #064e3b; }
         .text-denr { color: #064e3b; }
         .hero-pattern {
             background-image: linear-gradient(rgba(6, 78, 59, 0.9), rgba(6, 78, 59, 0.8)), url('https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=2000');
@@ -42,7 +40,7 @@
                     <a href="#contact" class="hover:text-emerald-700 transition">CONTACT US</a>
                 </div>
                 <div class="flex items-center gap-4">
-                    <button class="text-sm font-bold text-emerald-900 hover:bg-emerald-50 px-4 py-2 rounded-lg transition">LOGIN</button>
+                    <button onclick="toggleModal('loginModal')" class="text-sm font-bold text-emerald-900 hover:bg-emerald-50 px-4 py-2 rounded-lg transition">LOGIN</button>
                     <button class="bg-emerald-700 text-white text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-emerald-800 shadow-md transition">REGISTER</button>
                 </div>
             </div>
@@ -216,7 +214,73 @@
         </div>
     </footer>
 
+    <div id="loginModal" class="fixed inset-0 z-[60] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transition-all transform">
+            <div class="bg-emerald-900 p-6 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-bold">Account Login</h3>
+                    <p class="text-emerald-300 text-xs uppercase tracking-widest font-semibold mt-1">O-LDPMS Portal</p>
+                </div>
+                <button onclick="toggleModal('loginModal')" class="h-10 w-10 rounded-full hover:bg-emerald-800 transition flex items-center justify-center">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <form action="login_auth.php" method="POST" class="p-8 space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
+                    <div class="relative">
+                        <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="email" name="email" required 
+                            class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" 
+                            placeholder="name@email.com">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Password</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="password" name="password" required 
+                            class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" 
+                            placeholder="••••••••">
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" class="rounded text-emerald-600 focus:ring-emerald-500">
+                        <span class="text-sm text-gray-600">Remember me</span>
+                    </label>
+                    <a href="#" class="text-sm font-semibold text-emerald-700 hover:underline">Forgot Password?</a>
+                </div>
+                <button type="submit" class="w-full bg-emerald-700 text-white font-bold py-4 rounded-xl hover:bg-emerald-800 shadow-lg shadow-emerald-900/20 transition-all active:scale-[0.98]">
+                    Sign In
+                </button>
+                <p class="text-center text-gray-500 text-sm">
+                    Don't have an account? 
+                    <a href="#" class="text-emerald-700 font-bold hover:underline">Register Here</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // Prevent scroll
+            } else {
+                modal.classList.add('hidden');
+                document.body.style.overflow = 'auto'; // Enable scroll
+            }
+        }
+
+        // Close modal when clicking outside of the white box
+        window.onclick = function(event) {
+            const modal = document.getElementById('loginModal');
+            if (event.target == modal) {
+                toggleModal('loginModal');
+            }
+        }
+    </script>
 </body>
 </html>
-
-
