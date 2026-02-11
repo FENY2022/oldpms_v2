@@ -1,3 +1,30 @@
+<?php
+
+ require_once 'db.php';
+
+// Handle Contact Form Submission
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_contact'])) {
+    $name = htmlspecialchars($_POST['name']);
+    $email = htmlspecialchars($_POST['email']);
+    $subject = htmlspecialchars($_POST['subject']);
+    $message = htmlspecialchars($_POST['message']);
+
+    if (!empty($name) && !empty($email) && !empty($message)) {
+        $stmt = $pdo->prepare("INSERT INTO contact_messages (name, email, subject, message) VALUES (?, ?, ?, ?)");
+        if ($stmt->execute([$name, $email, $subject, $message])) {
+            $contact_msg = "<div class='p-4 mb-4 text-sm text-green-800 rounded-xl bg-green-50 border border-green-200'>Message sent successfully! We will get back to you shortly.</div>";
+        } else {
+            $contact_msg = "<div class='p-4 mb-4 text-sm text-red-800 rounded-xl bg-red-50 border border-red-200'>Failed to send message. Please try again later.</div>";
+        }
+    } else {
+        $contact_msg = "<div class='p-4 mb-4 text-sm text-yellow-800 rounded-xl bg-yellow-50 border border-yellow-200'>Please fill out all required fields.</div>";
+    }
+}
+
+// Fetch Requirements from Database
+$req_stmt = $pdo->query("SELECT * FROM requirements");
+$requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -119,69 +146,34 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-gray-800">
+                            <?php foreach ($requirements as $req): ?>
                             <tr class="hover:bg-slate-50 transition">
                                 <td class="px-8 py-4">
                                     <div class="flex items-center justify-between">
-                                        <span>1. Application Form</span>
-                                        <a href="documents/Application_Form_Lumber_Dealer.docx" download class="ml-4 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition">
+                                        <span><?= htmlspecialchars($req['requirement_name']) ?></span>
+                                        <?php if (!empty($req['download_link'])): ?>
+                                        <a href="<?= htmlspecialchars($req['download_link']) ?>" download class="ml-4 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition">
                                             <i class="fas fa-download"></i> Download
                                         </a>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
+                                <td class="px-8 py-4">
+                                    <?php if (strtolower($req['new_app_status']) == 'not required'): ?>
+                                        <i class="fas fa-times text-red-500 text-xl ml-1"></i>
+                                    <?php else: ?>
+                                        <i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> <?= htmlspecialchars($req['new_app_status']) ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="px-8 py-4">
+                                    <?php if (strtolower($req['renewal_app_status']) == 'not required'): ?>
+                                        <i class="fas fa-times text-red-500 text-xl ml-1"></i>
+                                    <?php else: ?>
+                                        <i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> <?= htmlspecialchars($req['renewal_app_status']) ?>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-4">2. Approved Lumber Supply Contract</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-4">3. Mayor’s / Business Permit</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Current year</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Current year</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-4">4. Business Plan</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Updated</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-4">5. Proof of Tax Compliance (BIR)</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> BIR COR + Latest ITR</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Latest ITR</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-4">6. Proof of Ownership of Lumberyard</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-4">7. Forestry Administrative Fees</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-4">8. Inspection and Verification Report</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50 transition font-bold">
-                                <td class="px-8 py-4">9. Performance Evaluation</td>
-                                <td class="px-8 py-4"><i class="fas fa-times text-red-500 mr-2 text-xl"></i> Not required</td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-4">10. Summary of Production & Disposition Report</td>
-                                <td class="px-8 py-4"><i class="fas fa-times text-red-500 text-xl ml-1"></i></td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                            </tr>
-
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-4">11. Ending Balance / Ending Stock Inventory</td>
-                                <td class="px-8 py-4"><i class="fas fa-times text-red-500 text-xl ml-1"></i></td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                            </tr>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
@@ -193,12 +185,15 @@
         <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12">
             <div>
                 <h3 class="text-3xl font-bold mb-6">Contact Us</h3>
-                <form class="space-y-4">
-                    <input type="text" placeholder="Your Name *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
-                    <input type="email" placeholder="Your Email address *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
-                    <input type="text" placeholder="Subject" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
-                    <textarea rows="4" placeholder="Message *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition"></textarea>
-                    <button class="w-full md:w-auto bg-blue-600 text-white font-bold px-10 py-4 rounded-xl hover:bg-blue-700 shadow-lg transition">Send Message</button>
+                
+                <?= $contact_msg ?>
+
+                <form method="POST" action="#contact" class="space-y-4">
+                    <input type="text" name="name" required placeholder="Your Name *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                    <input type="email" name="email" required placeholder="Your Email address *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                    <input type="text" name="subject" placeholder="Subject" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                    <textarea name="message" required rows="4" placeholder="Message *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition"></textarea>
+                    <button type="submit" name="submit_contact" class="w-full md:w-auto bg-blue-600 text-white font-bold px-10 py-4 rounded-xl hover:bg-blue-700 shadow-lg transition">Send Message</button>
                 </form>
             </div>
             <div class="flex flex-col justify-center">
