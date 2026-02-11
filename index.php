@@ -19,11 +19,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_contact'])) {
     } else {
         $contact_msg = "<div class='p-4 mb-4 text-sm text-yellow-800 rounded-xl bg-yellow-50 border border-yellow-200'>Please fill out all required fields.</div>";
     }
+} else {
+    $contact_msg = "";
 }
 
 // Fetch Requirements from Database
-$req_stmt = $pdo->query("SELECT * FROM requirements");
+$req_stmt = $pdo->query("SELECT * FROM requirements ORDER BY sequence ASC");
 $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -140,17 +143,25 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                     <table class="w-full text-left">
                         <thead>
                             <tr class="bg-gray-800 text-white uppercase text-xs tracking-wider">
+                                <th class="px-8 py-5 w-16">#</th>
                                 <th class="px-8 py-5">Requirement</th>
                                 <th class="px-8 py-5">New Application</th>
                                 <th class="px-8 py-5">Renewal Application</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-gray-800">
-                            <?php foreach ($requirements as $req): ?>
+                            <?php 
+                            $counter = 1; // Initialize the counter
+                            foreach ($requirements as $req): 
+                            ?>
                             <tr class="hover:bg-slate-50 transition">
+                                <td class="px-8 py-4 font-bold text-gray-500">
+                                    <?= $counter++ ?>
+                                </td>
+                                
                                 <td class="px-8 py-4">
                                     <div class="flex items-center justify-between">
-                                        <span><?= htmlspecialchars($req['requirement_name']) ?></span>
+                                        <span class="font-medium text-gray-900"><?= htmlspecialchars($req['requirement_name']) ?></span>
                                         <?php if (!empty($req['download_link'])): ?>
                                         <a href="<?= htmlspecialchars($req['download_link']) ?>" download class="ml-4 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition">
                                             <i class="fas fa-download"></i> Download
