@@ -1,4 +1,9 @@
 <?php
+// --- 1. PREVENT CACHING (Clear page on refresh) ---
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
 require_once 'db.php';
 
 // Create user_client table if it doesn't exist
@@ -59,6 +64,11 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <title>O-LDPMS | Online Lumber Dealer Permitting & Monitoring System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -74,6 +84,28 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
             background-image: linear-gradient(rgba(6, 78, 59, 0.9), rgba(6, 78, 59, 0.8)), url('https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=2000');
             background-size: cover;
             background-position: center;
+        }
+
+        /* --- 3. LOADING SPINNER CSS --- */
+        .loader {
+            border: 2px solid #f3f3f3; /* Light grey */
+            border-top: 2px solid currentColor; /* Matches text color */
+            border-radius: 50%;
+            width: 1rem;
+            height: 1rem;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .cursor-not-allowed {
+            pointer-events: none;
         }
     </style>
 </head>
@@ -329,7 +361,7 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                     <h3 class="text-xl font-bold">Client Registration</h3>
                     <p class="text-emerald-300 text-xs uppercase tracking-widest font-semibold mt-1">O-LDPMS Portal</p>
                 </div>
-                <button onclick="toggleModal('registerModal')" class="h-10 w-10 rounded-full hover:bg-emerald-800 transition flex items-center justify-center">
+                <button onclick="confirmCloseRegister()" class="h-10 w-10 rounded-full hover:bg-emerald-800 transition flex items-center justify-center">
                     <i class="fas fa-times text-lg"></i>
                 </button>
             </div>
@@ -351,16 +383,41 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         }
 
-        // Close modal when clicking outside of the white box
-        window.onclick = function(event) {
-            const loginModal = document.getElementById('loginModal');
-            const registerModal = document.getElementById('registerModal');
-            if (event.target == loginModal) {
-                toggleModal('loginModal');
-            } else if (event.target == registerModal) {
+        // Add confirmation dialog specifically for the Register form
+        function confirmCloseRegister() {
+            if (confirm("Are you sure you want to cancel your registration? All entered data will be lost.")) {
                 toggleModal('registerModal');
             }
         }
+
+        // Close modal when clicking outside of the white box (Only Login modal)
+        window.onclick = function(event) {
+            const loginModal = document.getElementById('loginModal');
+            
+            // We intentionally do NOT include registerModal here.
+            // This 'locks' the modal so clicking the background won't close it accidentally.
+            if (event.target == loginModal) {
+                toggleModal('loginModal');
+            }
+        }
+
+        // --- 4. JS FOR LOADING INDICATOR ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    // Only show loader if form is valid
+                    if (!this.checkValidity()) return; 
+
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+                        submitBtn.innerHTML = `<span class="loader"></span> Processing...`;
+                    }
+                });
+            });
+        });
     </script>
 </body>
 </html>
