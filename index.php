@@ -2,6 +2,33 @@
 
 require_once 'db.php';
 
+// Create user_client table if it doesn't exist
+$tableQuery = "CREATE TABLE IF NOT EXISTS `user_client` (
+  `client_id` int(11) NOT NULL AUTO_INCREMENT,
+  `firstname` varchar(50) NOT NULL,
+  `mid_name` varchar(50) NOT NULL,
+  `lastname` varchar(50) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `password` text NOT NULL,
+  `mobilenum` text NOT NULL,
+  `comp_id_upload` longtext NOT NULL,
+  `govt_id_upload` longtext NOT NULL,
+  `auth_letter` longtext NOT NULL,
+  `password_unhashed` text NOT NULL,
+  `Status` int(11) NOT NULL DEFAULT 0,
+  `province` text NOT NULL,
+  `citymun` text NOT NULL,
+  `brgy` text NOT NULL,
+  `zips` text NOT NULL,
+  PRIMARY KEY (`client_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
+
+try {
+    $pdo->exec($tableQuery);
+} catch (PDOException $e) {
+    die("DB Setup Error: " . $e->getMessage());
+}
+
 // Handle Contact Form Submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_contact'])) {
     $name = htmlspecialchars($_POST['name']);
@@ -21,6 +48,62 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_contact'])) {
     }
 } else {
     $contact_msg = "";
+}
+
+// Handle User Registration Submission
+$register_msg = "";
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_register'])) {
+    
+    // Create an uploads directory if it doesn't exist
+    $upload_dir = 'uploads/';
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0777, true);
+    }
+
+    // Sanitize Inputs
+    $fname = htmlspecialchars($_POST['firstname']);
+    $mname = htmlspecialchars($_POST['mid_name']);
+    $lname = htmlspecialchars($_POST['lastname']);
+    $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
+    $unhashed_password = $_POST['password']; 
+    $hashed_password = password_hash($unhashed_password, PASSWORD_DEFAULT);
+    $mobile = htmlspecialchars($_POST['mobilenum']);
+    $province = htmlspecialchars($_POST['province']);
+    $citymun = htmlspecialchars($_POST['citymun']);
+    $brgy = htmlspecialchars($_POST['brgy']);
+    $zips = htmlspecialchars($_POST['zips']);
+    $status = 0; // Default status (e.g., Pending)
+
+    // Handle File Uploads
+    function uploadFile($input_name, $dir) {
+        if (isset($_FILES[$input_name]) && $_FILES[$input_name]['error'] == 0) {
+            $filename = time() . '_' . basename($_FILES[$input_name]['name']);
+            $target_file = $dir . $filename;
+            if (move_uploaded_file($_FILES[$input_name]['tmp_name'], $target_file)) {
+                return $target_file;
+            }
+        }
+        return "";
+    }
+
+    $comp_id_path = uploadFile('comp_id_upload', $upload_dir);
+    $govt_id_path = uploadFile('govt_id_upload', $upload_dir);
+    $auth_letter_path = uploadFile('auth_letter', $upload_dir);
+
+    // Insert into Database
+    $stmt = $pdo->prepare("INSERT INTO user_client 
+        (firstname, mid_name, lastname, email, password, mobilenum, comp_id_upload, govt_id_upload, auth_letter, password_unhashed, Status, province, citymun, brgy, zips) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    
+    try {
+        if ($stmt->execute([$fname, $mname, $lname, $email, $hashed_password, $mobile, $comp_id_path, $govt_id_path, $auth_letter_path, $unhashed_password, $status, $province, $citymun, $brgy, $zips])) {
+            $register_msg = "<script>alert('Registration Successful! Please login.');</script>";
+        } else {
+            $register_msg = "<script>alert('Registration Failed. Please try again.');</script>";
+        }
+    } catch (PDOException $e) {
+        $register_msg = "<script>alert('Error: Email might already exist or DB issue.');</script>";
+    }
 }
 
 // Fetch Requirements from Database
@@ -52,8 +135,8 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
     </style>
 </head>
 <body class="bg-slate-50">
-
-    <nav class="sticky top-0 z-50 bg-white shadow-md">
+    
+    <?= $register_msg ?> <nav class="sticky top-0 z-50 bg-white shadow-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
                 <div class="flex items-center gap-3">
@@ -71,7 +154,7 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 <div class="flex items-center gap-4">
                     <button onclick="toggleModal('loginModal')" class="text-sm font-bold text-emerald-900 hover:bg-emerald-50 px-4 py-2 rounded-lg transition">LOGIN</button>
-                    <button class="bg-emerald-700 text-white text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-emerald-800 shadow-md transition">REGISTER</button>
+                    <button onclick="toggleModal('registerModal')" class="bg-emerald-700 text-white text-sm font-bold px-6 py-2.5 rounded-lg hover:bg-emerald-800 shadow-md transition">REGISTER</button>
                 </div>
             </div>
         </div>
@@ -152,7 +235,8 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                         <tbody class="divide-y divide-gray-100 text-gray-800">
                             <?php 
                             $counter = 1; // Initialize the counter
-                            foreach ($requirements as $req): 
+                            if(!empty($requirements)):
+                                foreach ($requirements as $req): 
                             ?>
                             <tr class="hover:bg-slate-50 transition">
                                 <td class="px-8 py-4 font-bold text-gray-500">
@@ -184,7 +268,14 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <?php endif; ?>
                                 </td>
                             </tr>
-                            <?php endforeach; ?>
+                            <?php 
+                                endforeach; 
+                            else:
+                            ?>
+                            <tr>
+                                <td colspan="4" class="px-8 py-4 text-center text-gray-500">No requirements loaded from the database yet.</td>
+                            </tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -282,8 +373,99 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                 </button>
                 <p class="text-center text-gray-500 text-sm">
                     Don't have an account? 
-                    <a href="#" class="text-emerald-700 font-bold hover:underline">Register Here</a>
+                    <a href="#" onclick="toggleModal('loginModal'); toggleModal('registerModal');" class="text-emerald-700 font-bold hover:underline">Register Here</a>
                 </p>
+            </form>
+        </div>
+    </div>
+
+    <div id="registerModal" class="fixed inset-0 z-[60] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8 relative transition-all transform">
+            <div class="bg-emerald-900 p-6 text-white flex justify-between items-center rounded-t-2xl sticky top-0 z-10">
+                <div>
+                    <h3 class="text-xl font-bold">Client Registration</h3>
+                    <p class="text-emerald-300 text-xs uppercase tracking-widest font-semibold mt-1">O-LDPMS Portal</p>
+                </div>
+                <button onclick="toggleModal('registerModal')" class="h-10 w-10 rounded-full hover:bg-emerald-800 transition flex items-center justify-center">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            
+            <form action="#home" method="POST" enctype="multipart/form-data" class="p-8 space-y-6 max-h-[75vh] overflow-y-auto">
+                
+                <h4 class="font-bold text-gray-800 border-b pb-2">Personal Information</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">First Name *</label>
+                        <input type="text" name="firstname" required class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Middle Name</label>
+                        <input type="text" name="mid_name" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Last Name *</label>
+                        <input type="text" name="lastname" required class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Email Address *</label>
+                        <input type="email" name="email" required class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Mobile Number *</label>
+                        <input type="text" name="mobilenum" required class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Password *</label>
+                        <input type="password" name="password" required class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                </div>
+
+                <h4 class="font-bold text-gray-800 border-b pb-2 mt-6">Address Information</h4>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Province *</label>
+                        <input type="text" name="province" required class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">City/Municipality *</label>
+                        <input type="text" name="citymun" required class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Barangay *</label>
+                        <input type="text" name="brgy" required class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">ZIP Code *</label>
+                        <input type="text" name="zips" required class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                </div>
+
+                <h4 class="font-bold text-gray-800 border-b pb-2 mt-6">Required Documents (PDF/Images)</h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Company ID Upload *</label>
+                        <input type="file" name="comp_id_upload" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Government ID Upload *</label>
+                        <input type="file" name="govt_id_upload" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Authorization Letter *</label>
+                        <input type="file" name="auth_letter" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                    </div>
+                </div>
+
+                <button type="submit" name="submit_register" class="w-full bg-emerald-700 text-white font-bold py-4 rounded-xl hover:bg-emerald-800 shadow-lg mt-6 transition-all">
+                    Complete Registration
+                </button>
             </form>
         </div>
     </div>
@@ -302,9 +484,12 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Close modal when clicking outside of the white box
         window.onclick = function(event) {
-            const modal = document.getElementById('loginModal');
-            if (event.target == modal) {
+            const loginModal = document.getElementById('loginModal');
+            const registerModal = document.getElementById('registerModal');
+            if (event.target == loginModal) {
                 toggleModal('loginModal');
+            } else if (event.target == registerModal) {
+                toggleModal('registerModal');
             }
         }
     </script>
