@@ -105,7 +105,7 @@
         <div class="max-w-7xl mx-auto px-6">
             <div class="text-center mb-16">
                 <h2 class="text-4xl font-extrabold text-gray-900 mb-4">List of Requirements</h2>
-                <p class="text-gray-600 max-w-2xl mx-auto">Please ensure all documents are scanned and uploaded in <span class="text-red-600 font-bold">PDF Format</span>. The application form must be notarized.</p>
+                <p class="text-gray-600 max-w-2xl mx-auto">Please ensure all documents are scanned and uploaded in <span class="text-red-600 font-bold">PDF Format</span>.</p>
             </div>
             
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
@@ -113,54 +113,66 @@
                     <table class="w-full text-left">
                         <thead>
                             <tr class="bg-gray-800 text-white uppercase text-xs tracking-wider">
-                                <th class="px-8 py-5">Document Name</th>
-                                <th class="px-8 py-5 text-center">New Application</th>
-                                <th class="px-8 py-5 text-center">For Renewal</th>
+                                <th class="px-8 py-5">Requirement</th>
+                                <th class="px-8 py-5">New Application</th>
+                                <th class="px-8 py-5">Renewal Application</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
+                        <tbody class="divide-y divide-gray-100 text-gray-800">
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-5">
-                                    <div class="font-bold text-gray-800">1. Application form duly accomplished & sworn/notarized</div>
-                                    <a href="#" class="text-blue-600 text-xs hover:underline"><i class="fas fa-download mr-1"></i>Download Template</a>
-                                </td>
-                                <td class="px-8 py-5 text-center"><i class="fas fa-check-circle text-emerald-500 text-xl"></i></td>
-                                <td class="px-8 py-5 text-center"><i class="fas fa-check-circle text-emerald-500 text-xl"></i></td>
+                                <td class="px-8 py-4">1. Application Form</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
                             </tr>
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-5">
-                                    <div class="font-bold text-gray-800">2. Lumber Supply Contract/Agreement from legitimate suppliers</div>
-                                    <span class="text-red-500 text-[10px] italic">Not required for mini-sawmill permittees</span>
-                                </td>
-                                <td class="px-8 py-5 text-center"><i class="fas fa-check-circle text-emerald-500 text-xl"></i></td>
-                                <td class="px-8 py-5 text-center"><i class="fas fa-check-circle text-emerald-500 text-xl"></i></td>
+                                <td class="px-8 py-4">2. Approved Lumber Supply Contract</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
                             </tr>
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-5">
-                                    <div class="font-bold text-gray-800">3. Mayor's Permit / Business Permit and Certificate</div>
-                                </td>
-                                <td class="px-8 py-5 text-center"><i class="fas fa-check-circle text-emerald-500 text-xl"></i></td>
-                                <td class="px-8 py-5 text-center"><i class="fas fa-check-circle text-emerald-500 text-xl"></i></td>
+                                <td class="px-8 py-4">3. Mayor’s / Business Permit</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Current year</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Current year</td>
                             </tr>
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-5"><div class="font-bold text-gray-800">4. Annual Business Plan</div></td>
-                                <td class="px-8 py-5 text-center"><i class="fas fa-check-circle text-emerald-500 text-xl"></i></td>
-                                <td class="px-8 py-5 text-center"><i class="fas fa-check-circle text-emerald-500 text-xl"></i></td>
+                                <td class="px-8 py-4">4. Business Plan</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Updated</td>
                             </tr>
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-5"><div class="font-bold text-gray-800">5. Latest Income Tax Return</div></td>
-                                <td class="px-8 py-5 text-center"><i class="fas fa-check-circle text-emerald-500 text-xl"></i></td>
-                                <td class="px-8 py-5 text-center"><i class="fas fa-check-circle text-emerald-500 text-xl"></i></td>
+                                <td class="px-8 py-4">5. Proof of Tax Compliance (BIR)</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> BIR COR + Latest ITR</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Latest ITR</td>
                             </tr>
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-5"><div class="font-bold text-gray-800">6. Pictures of Establishment inspected/verified by CENRO</div></td>
-                                <td class="px-8 py-5 text-center"><i class="fas fa-check-circle text-emerald-500 text-xl"></i></td>
-                                <td class="px-8 py-5 text-center text-gray-300">—</td>
+                                <td class="px-8 py-4">6. Proof of Ownership of Lumberyard</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
                             </tr>
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-5"><div class="font-bold text-gray-800">7. Ending stocked inventory report duly subscribed/sworn</div></td>
-                                <td class="px-8 py-5 text-center text-gray-300">—</td>
-                                <td class="px-8 py-5 text-center"><i class="fas fa-check-circle text-emerald-500 text-xl"></i></td>
+                                <td class="px-8 py-4">7. Forestry Administrative Fees</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition">
+                                <td class="px-8 py-4">8. Inspection and Verification Report</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition font-bold">
+                                <td class="px-8 py-4">9. Performance Evaluation</td>
+                                <td class="px-8 py-4"><i class="fas fa-times text-red-500 mr-2 text-xl"></i> Not required</td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition">
+                                <td class="px-8 py-4">10. Summary of Production & Disposition Report</td>
+                                <td class="px-8 py-4"><i class="fas fa-times text-red-500 text-xl ml-1"></i></td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition">
+                                <td class="px-8 py-4 pl-12">11. └ Ending Balance / Ending Stock Inventory</td>
+                                <td class="px-8 py-4"><i class="fas fa-times text-red-500 text-xl ml-1"></i></td>
+                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
                             </tr>
                         </tbody>
                     </table>
