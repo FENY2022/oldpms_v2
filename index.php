@@ -88,8 +88,8 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
 
         /* --- 3. LOADING SPINNER CSS --- */
         .loader {
-            border: 2px solid #f3f3f3; /* Light grey */
-            border-top: 2px solid currentColor; /* Matches text color */
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid currentColor;
             border-radius: 50%;
             width: 1rem;
             height: 1rem;
@@ -107,9 +107,27 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
         .cursor-not-allowed {
             pointer-events: none;
         }
+
+        /* --- TOAST ANIMATIONS --- */
+        .toast-enter {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        .toast-enter-active {
+            transform: translateX(0);
+            opacity: 1;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .toast-exit {
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
     </style>
 </head>
-<body class="bg-slate-50">
+<body class="bg-slate-50 relative">
+
+    <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
     <nav class="sticky top-0 z-50 bg-white shadow-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -383,7 +401,6 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         }
 
-        // Add confirmation dialog specifically for the Register form
         function confirmCloseRegister() {
             if (confirm("Are you sure you want to cancel your registration? All entered data will be lost.")) {
                 toggleModal('registerModal');
@@ -393,22 +410,118 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
         // Close modal when clicking outside of the white box (Only Login modal)
         window.onclick = function(event) {
             const loginModal = document.getElementById('loginModal');
-            
-            // We intentionally do NOT include registerModal here.
-            // This 'locks' the modal so clicking the background won't close it accidentally.
             if (event.target == loginModal) {
                 toggleModal('loginModal');
             }
         }
 
-        // --- 4. JS FOR LOADING INDICATOR ---
+        // --- TOAST NOTIFICATION FUNCTION ---
+        function showToast(message, type = "success") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+
+            toast.className = `toast-enter flex items-center gap-3 text-white px-6 py-4 rounded-xl shadow-xl pointer-events-auto ${bgColor}`;
+            toast.innerHTML = `<i class="fas ${icon} text-xl"></i><span class="font-semibold tracking-wide">${message}</span>`;
+            
+            container.appendChild(toast);
+
+            // Trigger animation in
+            requestAnimationFrame(() => {
+                toast.classList.add('toast-enter-active');
+            });
+
+            // Trigger animation out and remove
+            setTimeout(() => {
+                toast.classList.remove('toast-enter-active');
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 400); // Wait for transition
+            }, 3000);
+        }
+
+        // --- 4. FORM INTERCEPTION & LOADING SPINNER ---
         document.addEventListener('DOMContentLoaded', () => {
             const forms = document.querySelectorAll('form');
+            
             forms.forEach(form => {
                 form.addEventListener('submit', function(e) {
-                    // Only show loader if form is valid
-                    if (!this.checkValidity()) return; 
+                    if (!this.checkValidity()) return;
 
+                    // Intercept the registration form inside the modal
+                    if (this.closest('#registerModal')) {
+                        e.preventDefault(); // Stop standard page reload
+                        
+                        const submitBtn = this.querySelector('button[type="submit"]');
+                        let originalBtnText = submitBtn ? submitBtn.innerHTML : 'Submit';
+
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+                            submitBtn.innerHTML = `<span class="loader"></span> Processing...`;
+                        }
+
+                        // Use Fetch API to process the form data in the background
+                        const formData = new FormData(this);
+                        const actionUrl = this.getAttribute('action') || window.location.href;
+
+                        fetch(actionUrl, {
+                            method: 'POST',
+                            body: formData,
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                        .then(response => response.text()) // Read as text to check PHP output
+                        .then(html => {
+                            // 1. Close the SweetAlert loading spinner triggered by register.php
+                            if (typeof Swal !== 'undefined') {
+                                Swal.close();
+                            }
+
+                            // 2. Restore the submit button state
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                                submitBtn.innerHTML = originalBtnText;
+                            }
+
+                            // 3. Check the PHP response for success or error keywords
+                            if (html.includes('Registration Successful')) {
+                                // Show the success toast
+                                showToast("Registration successful! Check your email for verification.", "success");
+                                
+                                // Reset the form
+                                this.reset();
+                                
+                                // 4. Delay the modal close by exactly 3000ms to let the toast finish
+                                setTimeout(() => {
+                                    const modal = document.getElementById('registerModal');
+                                    if (!modal.classList.contains('hidden')) {
+                                        toggleModal('registerModal');
+                                    }
+                                }, 3000);
+
+                            } else if (html.includes('Email already registered')) {
+                                showToast("Email already registered. Please use a different email.", "error");
+                            } else {
+                                showToast("Registration failed. Please check your inputs.", "error");
+                            }
+                        })
+                        .catch(error => {
+                            if (typeof Swal !== 'undefined') Swal.close();
+                            showToast("Network error. Please try again.", "error");
+                            
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                                submitBtn.innerHTML = originalBtnText;
+                            }
+                        });
+
+                        return; // Ensure the rest of the script doesn't interfere
+                    }
+
+                    // Behavior for other standard forms (like login or contact)
                     const submitBtn = this.querySelector('button[type="submit"]');
                     if (submitBtn) {
                         submitBtn.disabled = true;
