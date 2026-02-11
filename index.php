@@ -120,7 +120,14 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-gray-800">
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-4">1. Application Form</td>
+                                <td class="px-8 py-4">
+                                    <div class="flex items-center justify-between">
+                                        <span>1. Application Form</span>
+                                        <a href="documents/Application_Form_Lumber_Dealer.docx" download class="ml-4 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </div>
+                                </td>
                                 <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
                                 <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
                             </tr>
