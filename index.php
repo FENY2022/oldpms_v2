@@ -178,13 +178,7 @@
                             </tr>
 
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-4">10. Summary of Production & Disposition Report</td>
-                                <td class="px-8 py-4"><i class="fas fa-times text-red-500 text-xl ml-1"></i></td>
-                                <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
-                            </tr>
-                            
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="px-8 py-4 pl-12">11. Ending Balance / Ending Stock Inventory</td>
+                                <td class="px-8 py-4">11. Ending Balance / Ending Stock Inventory</td>
                                 <td class="px-8 py-4"><i class="fas fa-times text-red-500 text-xl ml-1"></i></td>
                                 <td class="px-8 py-4"><i class="fas fa-check text-indigo-500 mr-2 text-lg"></i> Required</td>
                             </tr>
