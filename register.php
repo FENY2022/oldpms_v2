@@ -21,7 +21,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_register'])) {
     $citymun = htmlspecialchars($_POST['citymun']);
     $brgy = htmlspecialchars($_POST['brgy']);
     $zips = htmlspecialchars($_POST['zips']);
-    $status = 0; // Default status (e.g., Pending)
+    $status = 0; // Default status (e.g., Pending/Unverified)
+
+    // Generate a secure verification token
+    $verification_token = bin2hex(random_bytes(32));
 
     // Handle File Uploads
     function uploadFile($input_name, $dir) {
@@ -39,25 +42,84 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_register'])) {
     $govt_id_path = uploadFile('govt_id_upload', $upload_dir);
     $auth_letter_path = uploadFile('auth_letter', $upload_dir);
 
-    // Insert into Database
-    // $pdo is available here because this file will be included inside index.php where db.php is required.
+    // Insert into Database (Updated with verification_token)
     $stmt = $pdo->prepare("INSERT INTO user_client 
-        (firstname, mid_name, lastname, email, password, mobilenum, comp_id_upload, govt_id_upload, auth_letter, password_unhashed, Status, province, citymun, brgy, zips) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        (firstname, mid_name, lastname, email, verification_token, password, mobilenum, comp_id_upload, govt_id_upload, auth_letter, password_unhashed, Status, province, citymun, brgy, zips) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     
     try {
-        if ($stmt->execute([$fname, $mname, $lname, $email, $hashed_password, $mobile, $comp_id_path, $govt_id_path, $auth_letter_path, $unhashed_password, $status, $province, $citymun, $brgy, $zips])) {
-            $register_msg = "<script>alert('Registration Successful! Please login.');</script>";
+        if ($stmt->execute([$fname, $mname, $lname, $email, $verification_token, $hashed_password, $mobile, $comp_id_path, $govt_id_path, $auth_letter_path, $unhashed_password, $status, $province, $citymun, $brgy, $zips])) {
+            
+            // ==========================================
+            // EMAIL TRIGGER LOGIC
+            // ==========================================
+            
+            // 1. Build Base URL & Verification Link
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+            $domainName = $_SERVER['HTTP_HOST'];
+            $base_dir = dirname($_SERVER['PHP_SELF']); 
+            
+            $verify_link = $protocol . $domainName . $base_dir . "/verify.php?token=" . $verification_token . "&email=" . urlencode($email);
+
+            // 2. Prepare the email parameters
+            $subject = "Verify Your Account";
+            $message = "Hello $fname,\n\nYour registration was successful. Please click the link below to verify your email address:\n\n" . $verify_link . "\n\nThank you!";
+            $yourname = "Admin";
+
+            // 3. Construct the full GET request string URL-encoding the variables
+            $email_url = $protocol . $domainName . $base_dir . "/sendemail/send.php" 
+                       . "?send=1" 
+                       . "&email=" . urlencode($email) 
+                       . "&Subject=" . urlencode($subject) 
+                       . "&message=" . urlencode($message) 
+                       . "&yourname=" . urlencode($yourname);
+
+            // 4. Silently trigger the script in the background
+            @file_get_contents($email_url);
+            
+            // ==========================================
+            // TOAST NOTIFICATION (SweetAlert2)
+            // ==========================================
+            $register_msg = "
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 5000,
+                        timerProgressBar: true,
+                    });
+                    Toast.fire({
+                        icon: 'success',
+                        title: 'Registration Successful! Check your email for the verification link.'
+                    });
+                });
+            </script>";
+
         } else {
-            $register_msg = "<script>alert('Registration Failed. Please try again.');</script>";
+            $register_msg = "
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'Registration Failed. Please try again.', showConfirmButton: false, timer: 3000 });
+                });
+            </script>";
         }
     } catch (PDOException $e) {
-        $register_msg = "<script>alert('Error: Email might already exist or DB issue.');</script>";
+        $register_msg = "
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'Error: Email might already exist.', showConfirmButton: false, timer: 3000 });
+            });
+        </script>";
     }
 }
 
-echo $register_msg; // Outputs the success/error javascript alert
+// Output the Toast notification script if set
+echo $register_msg; 
 ?>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <form action="index.php" method="POST" enctype="multipart/form-data" class="p-8 space-y-6 max-h-[75vh] overflow-y-auto">
     
