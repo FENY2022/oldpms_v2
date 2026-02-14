@@ -359,8 +359,9 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                         <input type="checkbox" class="rounded text-emerald-600 focus:ring-emerald-500">
                         <span class="text-sm text-gray-600">Remember me</span>
                     </label>
-                    <a href="#" class="text-sm font-semibold text-emerald-700 hover:underline">Forgot Password?</a>
-                </div>
+<div class="flex items-center justify-between mt-4">
+    <a href="forgot_password.php" class="text-sm text-blue-500 hover:text-blue-800">Forgot Password?</a>
+</div>                </div>
                 <button type="submit" class="w-full bg-emerald-700 text-white font-bold py-4 rounded-xl hover:bg-emerald-800 shadow-lg shadow-emerald-900/20 transition-all active:scale-[0.98]">
                     Sign In
                 </button>
