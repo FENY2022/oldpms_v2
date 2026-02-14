@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 12, 2026 at 02:06 AM
+-- Generation Time: Feb 14, 2026 at 03:04 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -1447,6 +1447,19 @@ INSERT INTO `muncity` (`muncity_id`, `muncity_name`, `prov_code`, `mun_code`, `z
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `password_resets`
+--
+
+CREATE TABLE `password_resets` (
+  `id` int(11) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `expires_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `province`
 --
 
@@ -1635,7 +1648,7 @@ INSERT INTO `user_client` (`client_id`, `firstname`, `mid_name`, `lastname`, `em
 (144, 'Norberto Jr.', 'Bachinicha', 'Babia', 'junbabs799342@gmail.com', NULL, '$2y$10$giuG.yryOnn43jKEQHqw4uQ1y5tXBV95AroC1CYgOF9dzKX8QtXqC', '09630658357', 'PDF-69722042116777.48327861.jpg', '', '', '799342junbabs', 1, '1668', '166803', '166819018', 'CENRO Cantilan'),
 (145, 'Geodel June', 'Batulan', 'Salado', 'junesalado@gmail.com', NULL, '$2y$10$ghAHXaGC65tXissCofMl4.EG3bYQV3jZf/o5ZK5M8ORDcfRE9NfSa', '09075109748', 'PDF-697817f4badb64.26634248.jpg', '', '', '123456789G', 1, '1668', '166807', '166807001', 'CENRO Cantilan'),
 (165, 'ANTHONIE FENY', 'V.', 'CATALAN', 'vagefev606@desiys.com', '430739267c2b3e7817f1ab4762d18464ab953be6f4cd552823eaa12cb53d2ab3', '$2y$10$0hKFvge7Y7dc1gL5Fv5kj./Fd6qUSqi/0mOU8qrxIJYyEk6wBVYHq', '09478984921', 'uploads/1770794067_register.php', 'uploads/1770794067_register.php', '', 'vagefev606@desiys.com', 0, '1602', '160212', '160212003', '8611'),
-(166, 'ANTHONIE FENY', 'V.', 'CATALAN', 'venzonanthonie@gmail.com', '00da3051bcf5905efe98d6346c5d5ab17bcca1d870f5ae378fef28dcdb0c8f1d', '$2y$10$hrlJpDSysNCf8du0WsFTy.Uh85ocXZRSzqwkVcuiDU5Tn6IHRLleC', '09478984921', 'uploads/1770794164_manage_requirements.php', 'uploads/1770794164_register.php', '', 'feny9959', 1, '1602', '160211', '160211003', '8606'),
+(166, 'ANTHONIE FENY', 'V.', 'CATALAN', 'venzonanthonie@gmail.com', '00da3051bcf5905efe98d6346c5d5ab17bcca1d870f5ae378fef28dcdb0c8f1d', '$2y$10$k9xZMK.9pMWOt6cKAdcmtOzsdx2Yokjx1LQ2LkeTcdGQOmilxDoK.', '09478984921', 'uploads/1770794164_manage_requirements.php', 'uploads/1770794164_register.php', '', 'feny9959', 1, '1602', '160211', '160211003', '8606'),
 (167, 'ANTHONIE FENY', 'V.', 'CATALAN', 'vagedfev606@desiys.com', 'fb78ed561d9e75665cae8070a343bf82ff1e6c93d0a89aa69675dc4fa4a7076b', '$2y$10$d40Ne.7ujAt90xvd.g9.0euvS0IQcgD6fQQRLRHANZDvh36PIgK96', '09478984921', 'uploads/1770794285_register.php', 'uploads/1770794285_register.php', '', 'vagedfev606@desiys.com', 0, '1602', '160208', '160208001', '8604');
 
 --
@@ -1664,6 +1677,12 @@ ALTER TABLE `muncity`
   ADD KEY `region` (`prov_code`),
   ADD KEY `office` (`office_id`),
   ADD KEY `municipality` (`mun_code`);
+
+--
+-- Indexes for table `password_resets`
+--
+ALTER TABLE `password_resets`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `province`
@@ -1702,6 +1721,12 @@ ALTER TABLE `muncity`
   MODIFY `muncity_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=75;
 
 --
+-- AUTO_INCREMENT for table `password_resets`
+--
+ALTER TABLE `password_resets`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
 -- AUTO_INCREMENT for table `province`
 --
 ALTER TABLE `province`
@@ -1711,7 +1736,7 @@ ALTER TABLE `province`
 -- AUTO_INCREMENT for table `requirements`
 --
 ALTER TABLE `requirements`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `user_client`
