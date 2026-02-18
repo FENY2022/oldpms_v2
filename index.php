@@ -35,48 +35,60 @@ try {
 
 // Handle Contact Form Submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_contact'])) {
-    // Set header to return JSON
-    header('Content-Type: application/json');
+    header('Content-Type: application/json'); // Ensure clean JSON output
     
     $name = htmlspecialchars($_POST['name']);
     $email = htmlspecialchars($_POST['email']);
     $subject = htmlspecialchars($_POST['subject']);
     $message = htmlspecialchars($_POST['message']);
 
-    $response = [];
-
     if (!empty($name) && !empty($email) && !empty($message)) {
         try {
+            // 1. Save to Database
             $stmt = $pdo->prepare("INSERT INTO contact_messages (name, email, subject, message) VALUES (?, ?, ?, ?)");
             if ($stmt->execute([$name, $email, $subject, $message])) {
-                $response = [
-                    'status' => 'success', 
-                    'message' => 'Message sent successfully! We will get back to you shortly.'
-                ];
-            } else {
-                $response = [
-                    'status' => 'error', 
-                    'message' => 'Failed to save message to database.'
-                ];
+                
+                // 2. Send Acknowledgement Email using your PHPMailer setup
+                require_once 'sendemail/phpmailer/src/Exception.php';
+                require_once 'sendemail/phpmailer/src/PHPMailer.php';
+                require_once 'sendemail/phpmailer/src/SMTP.php';
+
+                $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+                
+                // Server settings (from your send.php)
+                $mail->isSMTP();
+                $mail->Host = 'smtp.gmail.com';
+                $mail->SMTPAuth = true;
+                $mail->Username = 'venzonanthonie@gmail.com'; 
+                $mail->Password = 'irsw yeav xgqy rmll'; 
+                $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port = 587;
+
+                // Recipients
+                $mail->setFrom('venzonanthonie@gmail.com', 'O-LDPMS Support');
+                $mail->addAddress($email); // Send TO the user who filled the form
+
+                // Content
+                $mail->isHTML(true);
+                $mail->Subject = "O-LDPMS Acknowledgement: " . $subject;
+                $mail->Body = "<h3>Hello $name,</h3>
+                               <p>Thank you for reaching out. We have received your message regarding '$subject' and will get back to you shortly.</p>
+                               <br><p>Best regards,<br>O-LDPMS Team</p>";
+                $mail->AltBody = "Hello $name, we have received your message and will get back to you shortly.";
+
+                $mail->send();
+
+                echo json_encode(['status' => 'success', 'message' => 'Message sent and acknowledgement email delivered!']);
             }
-        } catch (PDOException $e) {
-            $response = [
-                'status' => 'error', 
-                'message' => 'Database error: ' . $e->getMessage()
-            ];
+        } catch (Exception $e) {
+            // Catching the error here prevents the "Unexpected token" JSON error
+            echo json_encode(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
         }
     } else {
-        $response = [
-            'status' => 'error', 
-            'message' => 'Please fill out all required fields.'
-        ];
+        echo json_encode(['status' => 'error', 'message' => 'Please fill in all fields.']);
     }
-
-    // Output JSON and STOP execution to prevent HTML rendering
-    echo json_encode($response);
-    exit; 
+    exit; // Stop further execution to keep JSON clean
 }
-
 // Fetch Requirements from Database
 $req_stmt = $pdo->query("SELECT * FROM requirements ORDER BY sequence ASC");
 $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
