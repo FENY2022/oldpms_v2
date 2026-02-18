@@ -35,23 +35,46 @@ try {
 
 // Handle Contact Form Submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_contact'])) {
+    // Set header to return JSON
+    header('Content-Type: application/json');
+    
     $name = htmlspecialchars($_POST['name']);
     $email = htmlspecialchars($_POST['email']);
     $subject = htmlspecialchars($_POST['subject']);
     $message = htmlspecialchars($_POST['message']);
 
+    $response = [];
+
     if (!empty($name) && !empty($email) && !empty($message)) {
-        $stmt = $pdo->prepare("INSERT INTO contact_messages (name, email, subject, message) VALUES (?, ?, ?, ?)");
-        if ($stmt->execute([$name, $email, $subject, $message])) {
-            $contact_msg = "<div class='p-4 mb-4 text-sm text-green-800 rounded-xl bg-green-50 border border-green-200'>Message sent successfully! We will get back to you shortly.</div>";
-        } else {
-            $contact_msg = "<div class='p-4 mb-4 text-sm text-red-800 rounded-xl bg-red-50 border border-red-200'>Failed to send message. Please try again later.</div>";
+        try {
+            $stmt = $pdo->prepare("INSERT INTO contact_messages (name, email, subject, message) VALUES (?, ?, ?, ?)");
+            if ($stmt->execute([$name, $email, $subject, $message])) {
+                $response = [
+                    'status' => 'success', 
+                    'message' => 'Message sent successfully! We will get back to you shortly.'
+                ];
+            } else {
+                $response = [
+                    'status' => 'error', 
+                    'message' => 'Failed to save message to database.'
+                ];
+            }
+        } catch (PDOException $e) {
+            $response = [
+                'status' => 'error', 
+                'message' => 'Database error: ' . $e->getMessage()
+            ];
         }
     } else {
-        $contact_msg = "<div class='p-4 mb-4 text-sm text-yellow-800 rounded-xl bg-yellow-50 border border-yellow-200'>Please fill out all required fields.</div>";
+        $response = [
+            'status' => 'error', 
+            'message' => 'Please fill out all required fields.'
+        ];
     }
-} else {
-    $contact_msg = "";
+
+    // Output JSON and STOP execution to prevent HTML rendering
+    echo json_encode($response);
+    exit; 
 }
 
 // Fetch Requirements from Database
@@ -59,6 +82,7 @@ $req_stmt = $pdo->query("SELECT * FROM requirements ORDER BY sequence ASC");
 $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -283,13 +307,17 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 <?= $contact_msg ?>
 
-                <form method="POST" action="#contact" class="space-y-4">
-                    <input type="text" name="name" required placeholder="Your Name *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
-                    <input type="email" name="email" required placeholder="Your Email address *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
-                    <input type="text" name="subject" placeholder="Subject" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
-                    <textarea name="message" required rows="4" placeholder="Message *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition"></textarea>
-                    <button type="submit" name="submit_contact" class="w-full md:w-auto bg-blue-600 text-white font-bold px-10 py-4 rounded-xl hover:bg-blue-700 shadow-lg transition">Send Message</button>
-                </form>
+            <!-- Locate your contact form in index.php and update the ID -->
+            <form id="contactForm" method="POST" action="index.php" class="space-y-4">
+                <input type="hidden" name="submit_contact" value="1"> <!-- Hidden field to trigger PHP -->
+                <input type="text" name="name" required placeholder="Your Name *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                <input type="email" name="email" required placeholder="Your Email address *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                <input type="text" name="subject" placeholder="Subject" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                <textarea name="message" required rows="4" placeholder="Message *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition"></textarea>
+                <button type="submit" class="w-full md:w-auto bg-blue-600 text-white font-bold px-10 py-4 rounded-xl hover:bg-blue-700 shadow-lg transition">Send Message</button>
+            </form>
+
+
             </div>
             <div class="flex flex-col justify-center">
                 <div class="bg-slate-50 p-8 rounded-3xl border border-slate-100">
@@ -359,9 +387,9 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                         <input type="checkbox" class="rounded text-emerald-600 focus:ring-emerald-500">
                         <span class="text-sm text-gray-600">Remember me</span>
                     </label>
-<div class="flex items-center justify-between mt-4">
-    <a href="forgot_password.php" class="text-sm text-blue-500 hover:text-blue-800">Forgot Password?</a>
-</div>                </div>
+                    <div class="flex items-center justify-between mt-4">
+                        <a href="forgot_password.php" class="text-sm text-blue-500 hover:text-blue-800">Forgot Password?</a>
+                    </div>                </div>
                 <button type="submit" class="w-full bg-emerald-700 text-white font-bold py-4 rounded-xl hover:bg-emerald-800 shadow-lg shadow-emerald-900/20 transition-all active:scale-[0.98]">
                     Sign In
                 </button>
@@ -389,149 +417,178 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
             
         </div>
     </div>
-
-    <script>
-        function toggleModal(id) {
-            const modal = document.getElementById(id);
-            if (modal.classList.contains('hidden')) {
-                modal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden'; // Prevent scroll
-            } else {
-                modal.classList.add('hidden');
-                document.body.style.overflow = 'auto'; // Enable scroll
-            }
+<script>
+    /**
+     * MODAL MANAGEMENT
+     */
+    function toggleModal(id) {
+        const modal = document.getElementById(id);
+        if (modal.classList.contains('hidden')) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent scroll
+        } else {
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto'; // Enable scroll
         }
+    }
 
-        function confirmCloseRegister() {
-            if (confirm("Are you sure you want to cancel your registration? All entered data will be lost.")) {
-                toggleModal('registerModal');
-            }
+    function confirmCloseRegister() {
+        if (confirm("Are you sure you want to cancel your registration? All entered data will be lost.")) {
+            toggleModal('registerModal');
         }
+    }
 
-        // Close modal when clicking outside of the white box (Only Login modal)
-        window.onclick = function(event) {
-            const loginModal = document.getElementById('loginModal');
-            if (event.target == loginModal) {
-                toggleModal('loginModal');
-            }
+    // Close login modal when clicking outside the box
+    window.onclick = function(event) {
+        const loginModal = document.getElementById('loginModal');
+        if (event.target == loginModal) {
+            toggleModal('loginModal');
         }
+    }
 
-        // --- TOAST NOTIFICATION FUNCTION ---
-        function showToast(message, type = "success") {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            
-            const bgColor = type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
-            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+    /**
+     * TOAST NOTIFICATION SYSTEM
+     */
+    function showToast(message, type = "success") {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        
+        const bgColor = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-red-600' : 'bg-yellow-600');
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
 
-            toast.className = `toast-enter flex items-center gap-3 text-white px-6 py-4 rounded-xl shadow-xl pointer-events-auto ${bgColor}`;
-            toast.innerHTML = `<i class="fas ${icon} text-xl"></i><span class="font-semibold tracking-wide">${message}</span>`;
-            
-            container.appendChild(toast);
+        toast.className = `toast-enter flex items-center gap-3 text-white px-6 py-4 rounded-xl shadow-xl pointer-events-auto ${bgColor}`;
+        toast.innerHTML = `<i class="fas ${icon} text-xl"></i><span class="font-semibold tracking-wide">${message}</span>`;
+        
+        container.appendChild(toast);
 
-            // Trigger animation in
-            requestAnimationFrame(() => {
-                toast.classList.add('toast-enter-active');
-            });
+        // Trigger animation in
+        requestAnimationFrame(() => {
+            toast.classList.add('toast-enter-active');
+        });
 
-            // Trigger animation out and remove
-            setTimeout(() => {
-                toast.classList.remove('toast-enter-active');
-                toast.classList.add('toast-exit');
-                setTimeout(() => toast.remove(), 400); // Wait for transition
-            }, 3000);
-        }
+        // Trigger animation out and remove
+        setTimeout(() => {
+            toast.classList.remove('toast-enter-active');
+            toast.classList.add('toast-exit');
+            setTimeout(() => toast.remove(), 400); 
+        }, 3000);
+    }
 
-        // --- 4. FORM INTERCEPTION & LOADING SPINNER ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const forms = document.querySelectorAll('form');
-            
-            forms.forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    if (!this.checkValidity()) return;
+    /**
+     * FORM INTERCEPTION & AJAX SUBMISSION
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+        const forms = document.querySelectorAll('form');
+        
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (!this.checkValidity()) return;
 
-                    // Intercept the registration form inside the modal
-                    if (this.closest('#registerModal')) {
-                        e.preventDefault(); // Stop standard page reload
-                        
-                        const submitBtn = this.querySelector('button[type="submit"]');
-                        let originalBtnText = submitBtn ? submitBtn.innerHTML : 'Submit';
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn ? submitBtn.innerHTML : 'Submit';
 
-                        if (submitBtn) {
-                            submitBtn.disabled = true;
-                            submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
-                            submitBtn.innerHTML = `<span class="loader"></span> Processing...`;
-                        }
-
-                        // Use Fetch API to process the form data in the background
-                        const formData = new FormData(this);
-                        const actionUrl = this.getAttribute('action') || window.location.href;
-
-                        fetch(actionUrl, {
-                            method: 'POST',
-                            body: formData,
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                        .then(response => response.text()) // Read as text to check PHP output
-                        .then(html => {
-                            // 1. Close the SweetAlert loading spinner triggered by register.php
-                            if (typeof Swal !== 'undefined') {
-                                Swal.close();
-                            }
-
-                            // 2. Restore the submit button state
-                            if (submitBtn) {
-                                submitBtn.disabled = false;
-                                submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-                                submitBtn.innerHTML = originalBtnText;
-                            }
-
-                            // 3. Check the PHP response for success or error keywords
-                            if (html.includes('Registration Successful')) {
-                                // Show the success toast
-                                showToast("Registration successful! Check your email for verification.", "success");
-                                
-                                // Reset the form
-                                this.reset();
-                                
-                                // 4. Delay the modal close by exactly 3000ms to let the toast finish
-                                setTimeout(() => {
-                                    const modal = document.getElementById('registerModal');
-                                    if (!modal.classList.contains('hidden')) {
-                                        toggleModal('registerModal');
-                                    }
-                                }, 3000);
-
-                            } else if (html.includes('Email already registered')) {
-                                showToast("Email already registered. Please use a different email.", "error");
-                            } else {
-                                showToast("Registration failed. Please check your inputs.", "error");
-                            }
-                        })
-                        .catch(error => {
-                            if (typeof Swal !== 'undefined') Swal.close();
-                            showToast("Network error. Please try again.", "error");
-                            
-                            if (submitBtn) {
-                                submitBtn.disabled = false;
-                                submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-                                submitBtn.innerHTML = originalBtnText;
-                            }
-                        });
-
-                        return; // Ensure the rest of the script doesn't interfere
+                // --- 1. HANDLE CONTACT FORM (AJAX) ---
+                if (this.id === 'contactForm' || this.getAttribute('action')?.includes('#contact')) {
+                    e.preventDefault();
+                    
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+                        submitBtn.innerHTML = `<span class="loader"></span> Sending...`;
                     }
 
-                    // Behavior for other standard forms (like login or contact)
-                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const formData = new FormData(this);
+                    // Append the submit button name manually for PHP isset()
+                    formData.append('submit_contact', '1');
+
+                    fetch('index.php', {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            showToast(data.message, "success");
+                            this.reset();
+                        } else {
+                            showToast(data.message, "error");
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showToast("Failed to send message. Please try again.", "error");
+                    })
+                    .finally(() => {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                            submitBtn.innerHTML = originalBtnText;
+                        }
+                    });
+                    
+                    return;
+                }
+
+                // --- 2. HANDLE REGISTRATION FORM (AJAX) ---
+                if (this.closest('#registerModal')) {
+                    e.preventDefault(); 
+                    
                     if (submitBtn) {
                         submitBtn.disabled = true;
                         submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
                         submitBtn.innerHTML = `<span class="loader"></span> Processing...`;
                     }
-                });
+
+                    const formData = new FormData(this);
+                    const actionUrl = this.getAttribute('action') || window.location.href;
+
+                    fetch(actionUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        // Close SweetAlert if register.php uses it
+                        if (typeof Swal !== 'undefined') Swal.close();
+
+                        if (html.includes('Registration Successful')) {
+                            showToast("Registration successful! Check your email for verification.", "success");
+                            this.reset();
+                            setTimeout(() => {
+                                toggleModal('registerModal');
+                            }, 3000);
+                        } else if (html.includes('Email already registered')) {
+                            showToast("Email already registered. Please use a different email.", "error");
+                        } else {
+                            showToast("Registration failed. Please check your inputs.", "error");
+                        }
+                    })
+                    .catch(error => {
+                        showToast("Network error. Please try again.", "error");
+                    })
+                    .finally(() => {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                            submitBtn.innerHTML = originalBtnText;
+                        }
+                    });
+
+                    return;
+                }
+
+                // --- 3. DEFAULT BEHAVIOR (LOGIN FORM) ---
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+                    submitBtn.innerHTML = `<span class="loader"></span> Processing...`;
+                }
             });
         });
-    </script>
+    });
+</script>
+
 </body>
 </html>
