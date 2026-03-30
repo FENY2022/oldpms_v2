@@ -136,8 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
 
         // --- NEW: Add initial Audit Trail Log ---
         $action = "Application Submitted";
-        $remarks = "Your " . $app_type . " application has been successfully submitted and is now Pending Review.";
-        $stmtLog = $pdo->prepare("INSERT INTO application_logs (app_id, action, remarks) VALUES (?, ?, ?)");
+        $remarks = "Application successfully submitted subject for evaluation. Note: Your application will be evaluated. Complete and correct documents will be officially received and processed, while incomplete documents will be returned and end the transaction. You will be notified of the status of your application thru SMS and to your O-LDPMS registered account. For the return application, it is indicated in the notification either lacks requirements or correction of the wrong data entry in the required documents. Upon compliance, you may reapply using the registered O-LDPMS account.";        $stmtLog = $pdo->prepare("INSERT INTO application_logs (app_id, action, remarks) VALUES (?, ?, ?)");
         $stmtLog->execute([$new_app_id, $action, $remarks]);
         // ----------------------------------------
 
@@ -237,14 +236,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
                     <label class="block text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">Existing Permit Reference No. / Lumber Dealer No. <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <i class="fas fa-sync-alt absolute left-4 top-1/2 -translate-y-1/2 text-blue-400"></i>
-                        <input type="text" name="reference_number" required placeholder="Enter your previous permit or reference number" class="w-full bg-white border border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-800 rounded-xl pl-10 pr-4 py-3 transition outline-none shadow-sm">
+                        <input type="text" id="reference_number" name="reference_number" required placeholder="Enter your previous permit or reference number" class="w-full bg-white border border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-800 rounded-xl pl-10 pr-4 py-3 transition outline-none shadow-sm">
                     </div>
                 </div>
                 <?php endif; ?>
 
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Type of Application <span class="text-red-500">*</span></label>
-                    <select name="applicant_type" required class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm cursor-pointer">
+                    <select id="applicant_type" name="applicant_type" required class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm cursor-pointer">
                         <option value="" disabled selected>Select Type</option>
                         <option value="Individual">Individual</option>
                         <option value="Association">Association</option>
@@ -253,11 +252,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
                 
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Business / Trade Name <span class="text-red-500">*</span></label>
-                    <input type="text" name="business_name" required placeholder="Enter registered business name" class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm">
+                    <input type="text" id="business_name" name="business_name" required placeholder="Enter registered business name" class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm">
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">TIN Number <span class="text-red-500">*</span></label>
-                    <input type="text" name="tin_number" required placeholder="000-000-000-000" class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm">
+                    <input type="text" id="tin_number" name="tin_number" required placeholder="000-000-000-000" class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm">
                 </div>
             </div>
 
@@ -296,7 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
 
                     <div class="md:col-span-2 lg:col-span-4">
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Street Address (Optional)</label>
-                        <input type="text" name="street_address" placeholder="Bldg/House No., Street Name, Subdivision, etc." class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm">
+                        <input type="text" id="street_address" name="street_address" placeholder="Bldg/House No., Street Name, Subdivision, etc." class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm">
                     </div>
                 </div>
             </div>
@@ -355,6 +354,50 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
             </button>
         </div>
     </form>
+
+    <div id="confirmationModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-300 opacity-0">
+        <div id="modalInner" class="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 transform scale-95 transition-transform duration-300">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-900">Confirm Application Details</h3>
+                <button type="button" id="closeModalBtn" class="text-gray-400 hover:text-gray-600 transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <div class="p-6 space-y-4 text-sm text-gray-700 max-h-[60vh] overflow-y-auto file-list">
+                <p class="mb-2 text-gray-500">Please review your information before submitting. Once confirmed, your application will be forwarded for review.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <div>
+                        <span class="font-bold text-gray-900 block text-xs uppercase tracking-wide mb-1">Applicant Type</span>
+                        <span id="summary_applicant_type" class="text-emerald-700 font-semibold"></span>
+                    </div>
+                    <div>
+                        <span class="font-bold text-gray-900 block text-xs uppercase tracking-wide mb-1">Business/Trade Name</span>
+                        <span id="summary_business_name" class="text-emerald-700 font-semibold"></span>
+                    </div>
+                    <div>
+                        <span class="font-bold text-gray-900 block text-xs uppercase tracking-wide mb-1">TIN Number</span>
+                        <span id="summary_tin_number" class="text-emerald-700 font-semibold"></span>
+                    </div>
+                    <?php if ($app_type == 'Renewal'): ?>
+                    <div>
+                        <span class="font-bold text-gray-900 block text-xs uppercase tracking-wide mb-1">Reference No.</span>
+                        <span id="summary_reference_number" class="text-emerald-700 font-semibold"></span>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                
+                <div class="mt-4 pt-4">
+                    <span class="font-bold text-gray-900 block text-xs uppercase tracking-wide mb-2"><i class="fas fa-map-marker-alt text-emerald-600 mr-1"></i> Business Address</span>
+                    <p id="summary_full_address" class="bg-gray-50 p-3 rounded-lg border border-gray-100 text-gray-600 leading-relaxed"></p>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex flex-col-reverse sm:flex-row justify-end gap-3">
+                <button type="button" id="cancelSubmitBtn" class="px-6 py-2.5 rounded-xl font-semibold text-gray-600 bg-white border border-gray-300 hover:bg-gray-100 transition w-full sm:w-auto">Cancel</button>
+                <button type="button" id="confirmSubmitBtn" class="px-6 py-2.5 rounded-xl font-bold text-white bg-emerald-700 hover:bg-emerald-800 shadow-md transition flex items-center justify-center gap-2 w-full sm:w-auto">Confirm & Submit <i class="fas fa-check"></i></button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // --- Optional Requirement Toggle Logic ---
@@ -512,15 +555,86 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
             }
         }
 
-        // --- 2. Button Loading State upon submission ---
-        document.getElementById('applicationForm').addEventListener('submit', function() {
-            const btn = document.getElementById('submitBtn');
-            // Change inner HTML to a spinner
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing Uploads...';
-            // Make button look disabled
-            btn.classList.add('opacity-75', 'cursor-not-allowed');
-            // Prevent multiple clicks
-            btn.style.pointerEvents = "none";
+        // --- 2. Form Submission Intercept & Modal Logic ---
+        let isConfirmed = false;
+        const form = document.getElementById('applicationForm');
+        const modal = document.getElementById('confirmationModal');
+        const modalInner = document.getElementById('modalInner');
+
+        form.addEventListener('submit', function(e) {
+            // If the user hasn't confirmed via the modal yet, intercept the submission
+            if (!isConfirmed) {
+                e.preventDefault(); 
+                
+                // Populate Modal Summary Details
+                document.getElementById('summary_applicant_type').textContent = document.getElementById('applicant_type').value || 'N/A';
+                document.getElementById('summary_business_name').textContent = document.getElementById('business_name').value || 'N/A';
+                document.getElementById('summary_tin_number').textContent = document.getElementById('tin_number').value || 'N/A';
+                
+                <?php if ($app_type == 'Renewal'): ?>
+                const refInput = document.getElementById('reference_number');
+                if(refInput) {
+                    document.getElementById('summary_reference_number').textContent = refInput.value || 'N/A';
+                }
+                <?php endif; ?>
+
+                // Construct full address by grabbing the text of the selected options
+                const provText = provinceSelect.options[provinceSelect.selectedIndex]?.text || '';
+                const munText = muncitySelect.options[muncitySelect.selectedIndex]?.text || '';
+                const brgyText = brgySelect.options[brgySelect.selectedIndex]?.text || '';
+                const zipText = zipCodeInput.value || '';
+                const streetText = document.getElementById('street_address').value || '';
+                
+                let addressParts = [];
+                if(streetText) addressParts.push(streetText);
+                if(brgyText && !brgySelect.disabled) addressParts.push(brgyText);
+                if(munText && !muncitySelect.disabled) addressParts.push(munText);
+                if(provText && provinceSelect.value) addressParts.push(provText);
+                if(zipText) addressParts.push(zipText);
+
+                document.getElementById('summary_full_address').textContent = addressParts.join(', ') || 'N/A';
+
+                // Display the Modal with Tailwind Transitions
+                modal.classList.remove('hidden');
+                // Force browser reflow to enable transition
+                void modal.offsetWidth; 
+                modal.classList.remove('opacity-0');
+                modalInner.classList.remove('scale-95');
+                modalInner.classList.add('scale-100');
+            }
+        });
+
+        // Close Modal Function
+        function closeConfirmationModal() {
+            modal.classList.add('opacity-0');
+            modalInner.classList.remove('scale-100');
+            modalInner.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        document.getElementById('closeModalBtn').addEventListener('click', closeConfirmationModal);
+        document.getElementById('cancelSubmitBtn').addEventListener('click', closeConfirmationModal);
+
+        // Final Confirm Submit Button
+        document.getElementById('confirmSubmitBtn').addEventListener('click', function() {
+            isConfirmed = true; 
+            
+            // Visual feedback on the modal's confirm button
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            this.classList.add('opacity-75', 'cursor-not-allowed');
+            this.style.pointerEvents = "none";
+            document.getElementById('cancelSubmitBtn').style.pointerEvents = "none";
+            document.getElementById('closeModalBtn').style.pointerEvents = "none";
+            
+            // Visual feedback on the main form button behind the modal
+            const mainBtn = document.getElementById('submitBtn');
+            mainBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing Uploads...';
+            mainBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            
+            // Programmatically submit the form to bypass the event listener
+            form.submit(); 
         });
 
         // --- 3. Toast Notification System ---
@@ -549,7 +663,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
         <?php if (!empty($success_msg)): ?>
             showToast("<?= addslashes($success_msg) ?>", "success");
             setTimeout(() => {
-                // Changed to window.parent so it redirects the top-level parent document
                 window.parent.location.href = 'dashboard.php';
             }, 2000);
         <?php endif; ?>

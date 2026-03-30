@@ -11,23 +11,139 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 require_once 'db.php';
 $client_id = $_SESSION['client_id'];
 
+// --- Handle Re-upload of PDF Files (Multiple Files Support & 10 min Limit) ---
+$upload_msg = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'reupload_file') {
+    $req_id = intval($_POST['requirement_id']);
+    $app_id = intval($_POST['app_id']);
+
+    // Security Check: Ensure this application belongs to the logged-in client
+    $verify_stmt = $pdo->prepare("SELECT client_id, date_submitted FROM permit_applications WHERE app_id = ?");
+    $verify_stmt->execute([$app_id]);
+    $app_data = $verify_stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($app_data && $app_data['client_id'] == $client_id) {
+        
+        // 10-Minute Check (600 seconds)
+        $time_elapsed = time() - strtotime($app_data['date_submitted']);
+        
+        if ($time_elapsed <= 600) {
+            if (isset($_FILES['new_files']) && !empty($_FILES['new_files']['name'][0])) {
+                $upload_dir = 'uploads/applications/';
+                if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+
+                $all_uploaded = true;
+                $file_count = count($_FILES['new_files']['name']);
+
+                // Validate all files first before deleting old ones
+                for ($i = 0; $i < $file_count; $i++) {
+                    if ($_FILES['new_files']['error'][$i] == 0) {
+                        $file_ext = strtolower(pathinfo($_FILES['new_files']['name'][$i], PATHINFO_EXTENSION));
+                        if ($file_ext !== 'pdf') {
+                            $all_uploaded = false;
+                            $upload_msg = "Invalid file type detected. Only PDFs are allowed.";
+                            break;
+                        }
+                    }
+                }
+
+                if ($all_uploaded) {
+                    // Delete old files for this specific requirement from DB and Server
+                    $old_stmt = $pdo->prepare("SELECT file_id, file_path FROM permit_requirements_files WHERE app_id = ? AND requirement_id = ?");
+                    $old_stmt->execute([$app_id, $req_id]);
+                    $delete_stmt = $pdo->prepare("DELETE FROM permit_requirements_files WHERE file_id = ?");
+                    
+                    while ($old = $old_stmt->fetch(PDO::FETCH_ASSOC)) {
+                        if (file_exists($old['file_path'])) {
+                            unlink($old['file_path']);
+                        }
+                        $delete_stmt->execute([$old['file_id']]);
+                    }
+
+                    // Upload new files and insert to DB
+                    $insert_stmt = $pdo->prepare("INSERT INTO permit_requirements_files (app_id, requirement_id, file_path) VALUES (?, ?, ?)");
+                    for ($i = 0; $i < $file_count; $i++) {
+                        if ($_FILES['new_files']['error'][$i] == 0) {
+                            $file_tmp = $_FILES['new_files']['tmp_name'][$i];
+                            // Generate safe, unique filename
+                            $new_file_name = $app_id . '_' . $req_id . '_' . $i . '_' . time() . '_' . rand(1000, 9999) . '.pdf';
+                            $destination = $upload_dir . $new_file_name;
+
+                            if (move_uploaded_file($file_tmp, $destination)) {
+                                $insert_stmt->execute([$app_id, $req_id, $destination]);
+                            }
+                        }
+                    }
+
+                    // Insert Audit Trail Log
+                    $log_stmt = $pdo->prepare("INSERT INTO application_logs (app_id, action, remarks) VALUES (?, ?, ?)");
+                    $log_stmt->execute([$app_id, 'Document Updated', "Requirement document(s) were updated/re-uploaded by the applicant."]);
+
+                    $upload_msg = "Documents successfully updated!";
+                }
+            } else {
+                $upload_msg = "No files selected.";
+            }
+        } else {
+            $upload_msg = "Re-upload time limit (10 minutes) has expired.";
+        }
+    } else {
+        $upload_msg = "Error uploading file or permission denied.";
+    }
+}
+
 // 1. Fetch Applications for the Current Client
 $stmt = $pdo->prepare("SELECT * FROM permit_applications WHERE client_id = ? ORDER BY app_id DESC");
 $stmt->execute([$client_id]);
 $applications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 2. Fetch Audit Trail Logs grouped by App ID
+// 2. Fetch Audit Trail Logs & Uploaded Files grouped by App ID
 $logs = [];
+$final_files = [];
+
 if (!empty($applications)) {
     $app_ids = array_column($applications, 'app_id');
     $placeholders = implode(',', array_fill(0, count($app_ids), '?'));
     
+    // Fetch Logs
     $log_stmt = $pdo->prepare("SELECT * FROM application_logs WHERE app_id IN ($placeholders) ORDER BY created_at DESC");
     $log_stmt->execute($app_ids);
     $all_logs = $log_stmt->fetchAll(PDO::FETCH_ASSOC);
     
     foreach ($all_logs as $log) {
         $logs[$log['app_id']][] = $log;
+    }
+
+    // Fetch Files joined with Requirements details
+    $file_stmt = $pdo->prepare("
+        SELECT prf.*, r.requirement_name 
+        FROM permit_requirements_files prf
+        JOIN requirements r ON prf.requirement_id = r.id
+        WHERE prf.app_id IN ($placeholders)
+        ORDER BY r.sequence ASC, prf.file_id ASC
+    ");
+    $file_stmt->execute($app_ids);
+    $all_files = $file_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Group files by application ID -> requirement ID (to handle multiple files per req)
+    $grouped_files = [];
+    foreach ($all_files as $file) {
+        if (!isset($grouped_files[$file['app_id']][$file['requirement_id']])) {
+            $grouped_files[$file['app_id']][$file['requirement_id']] = [
+                'requirement_id' => $file['requirement_id'],
+                'requirement_name' => $file['requirement_name'],
+                'files' => []
+            ];
+        }
+        $grouped_files[$file['app_id']][$file['requirement_id']]['files'][] = [
+            'file_id' => $file['file_id'],
+            'file_path' => $file['file_path']
+        ];
+    }
+    
+    // Re-index to standard arrays for easy JSON parsing
+    foreach ($grouped_files as $a_id => $reqs) {
+        $final_files[$a_id] = array_values($reqs);
     }
 }
 ?>
@@ -49,7 +165,20 @@ if (!empty($applications)) {
         .modal-enter-active { opacity: 1; transform: scale(1); transition: all 0.2s ease-out; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen p-6 lg:p-10">
+<body class="bg-slate-50 min-h-screen p-6 lg:p-10 relative">
+
+    <?php if(!empty($upload_msg)): ?>
+    <div id="toastMsg" class="fixed top-5 right-5 z-[100] <?= strpos(strtolower($upload_msg), 'error') !== false || strpos(strtolower($upload_msg), 'expired') !== false ? 'bg-red-600' : 'bg-emerald-600' ?> text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 transition-opacity duration-500">
+        <i class="fas <?= strpos(strtolower($upload_msg), 'error') !== false || strpos(strtolower($upload_msg), 'expired') !== false ? 'fa-exclamation-circle' : 'fa-check-circle' ?> text-xl"></i>
+        <span class="font-bold"><?= htmlspecialchars($upload_msg) ?></span>
+    </div>
+    <script>
+        setTimeout(() => {
+            const t = document.getElementById('toastMsg');
+            if(t) { t.style.opacity = '0'; setTimeout(()=>t.remove(), 500); }
+        }, 4000);
+    </script>
+    <?php endif; ?>
 
     <div class="mb-8 flex justify-between items-center">
         <div>
@@ -72,7 +201,10 @@ if (!empty($applications)) {
         </div>
     <?php else: ?>
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            <?php foreach ($applications as $app): ?>
+            <?php foreach ($applications as $app): 
+                $time_elapsed = time() - strtotime($app['date_submitted']);
+                $can_edit = ($time_elapsed <= 600); // 600 seconds = 10 minutes
+            ?>
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col hover:border-emerald-300 transition-colors">
                     <div class="p-6 flex-1">
                         <div class="flex justify-between items-start mb-4">
@@ -95,6 +227,10 @@ if (!empty($applications)) {
                     </div>
                     
                     <div class="bg-slate-50 px-6 py-4 border-t border-gray-100 mt-auto">
+                        <button onclick="openDocsModal(<?= $app['app_id'] ?>)" class="w-full bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-100 transition flex items-center justify-center gap-2 mb-2">
+                            <i class="fas fa-file-pdf"></i> View / Edit Documents
+                        </button>
+
                         <button onclick="openAuditTrail(<?= $app['app_id'] ?>)" class="w-full bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition flex items-center justify-center gap-2">
                             <i class="fas fa-history"></i> View Audit Trail
                         </button>
@@ -104,13 +240,18 @@ if (!empty($applications)) {
                 <script type="application/json" id="logs_<?= $app['app_id'] ?>">
                     <?= json_encode($logs[$app['app_id']] ?? []) ?>
                 </script>
+                <script type="application/json" id="files_<?= $app['app_id'] ?>">
+                    <?= json_encode($final_files[$app['app_id']] ?? []) ?>
+                </script>
+                <script type="application/json" id="app_meta_<?= $app['app_id'] ?>">
+                    <?= json_encode(['can_edit' => $can_edit]) ?>
+                </script>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
 
     <div id="auditModal" class="fixed inset-0 z-[60] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transition-all transform flex flex-col max-h-[90vh] modal-enter" id="auditModalContent">
-            
             <div class="bg-emerald-900 p-6 text-white flex justify-between items-center shrink-0">
                 <div>
                     <h3 class="text-xl font-bold">Application Audit Trail</h3>
@@ -118,40 +259,114 @@ if (!empty($applications)) {
                 </div>
                 <button onclick="closeModal('auditModal')" class="hover:bg-emerald-800 p-2 h-8 w-8 flex items-center justify-center rounded-full transition"><i class="fas fa-times"></i></button>
             </div>
-            
             <div class="p-8 overflow-y-auto flex-1 bg-slate-50">
-                <ul id="auditTimeline" class="relative border-l-2 border-emerald-200 ml-3 space-y-6">
-                    </ul>
+                <ul id="auditTimeline" class="relative border-l-2 border-emerald-200 ml-3 space-y-6"></ul>
             </div>
-            
+        </div>
+    </div>
+
+    <div id="docsModal" class="fixed inset-0 z-[60] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transition-all transform flex flex-col max-h-[90vh] modal-enter" id="docsModalContent">
+            <div class="bg-blue-900 p-6 text-white flex justify-between items-center shrink-0">
+                <div>
+                    <h3 class="text-xl font-bold">Application Documents</h3>
+                    <p class="text-blue-200 text-sm mt-1" id="docsModalAppId">App ID: #00000</p>
+                </div>
+                <button onclick="closeModal('docsModal')" class="hover:bg-blue-800 p-2 h-8 w-8 flex items-center justify-center rounded-full transition"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 bg-slate-50">
+                <p class="text-xs text-gray-500 mb-4 bg-yellow-50 text-yellow-800 border border-yellow-200 p-3 rounded-lg">
+                    <i class="fas fa-info-circle"></i> You can view your submitted documents below. The re-upload window is strictly available for <strong>10 minutes</strong> after submitting your application.
+                </p>
+                <ul id="docsList" class="space-y-4"></ul>
+            </div>
         </div>
     </div>
 
     <script>
-        function openAuditTrail(appId) {
-            // Update Modal Header
-            document.getElementById('auditModalAppId').innerText = `Tracking App ID: #${String(appId).padStart(5, '0')}`;
+        // File / Documents Logic
+        function openDocsModal(appId) {
+            document.getElementById('docsModalAppId').innerText = `Tracking App ID: #${String(appId).padStart(5, '0')}`;
             
-            // Get logs from hidden script tag
+            const filesData = document.getElementById('files_' + appId).textContent;
+            const files = JSON.parse(filesData);
+            
+            const metaData = document.getElementById('app_meta_' + appId).textContent;
+            const meta = JSON.parse(metaData);
+            const canEdit = meta.can_edit;
+
+            const list = document.getElementById('docsList');
+            list.innerHTML = '';
+
+            if (files.length === 0) {
+                list.innerHTML = '<li class="text-center p-6 text-gray-500 font-medium">No documents found for this application.</li>';
+            } else {
+                files.forEach(reqGroup => {
+                    const li = document.createElement('li');
+                    li.className = "bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3 transition hover:border-blue-300";
+                    
+                    // Generate view links for all files under this requirement
+                    let fileLinks = reqGroup.files.map((f, index) => `
+                        <a href="${f.file_path}" target="_blank" class="text-xs font-bold text-blue-600 hover:text-blue-800 mt-2 mr-2 inline-flex items-center gap-1 bg-blue-50 px-2 py-1 rounded border border-blue-100">
+                            <i class="fas fa-external-link-alt"></i> File ${index + 1}
+                        </a>
+                    `).join('');
+
+                    // Show reupload form if within 10 minutes, else show lock message
+                    let editForm = canEdit ? `
+                        <form method="POST" enctype="multipart/form-data" class="mt-2 pt-3 border-t border-gray-100 flex items-center gap-3">
+                            <input type="hidden" name="action" value="reupload_file">
+                            <input type="hidden" name="requirement_id" value="${reqGroup.requirement_id}">
+                            <input type="hidden" name="app_id" value="${appId}">
+                            <input type="file" name="new_files[]" accept=".pdf" multiple required class="flex-1 text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer">
+                            <button type="submit" class="bg-gray-800 text-white text-xs px-4 py-2 rounded-lg font-bold hover:bg-gray-900 transition flex items-center gap-1 shrink-0">
+                                <i class="fas fa-upload"></i> Re-upload
+                            </button>
+                        </form>
+                    ` : `
+                        <div class="mt-1 pt-2 border-t border-gray-100 text-xs text-red-500 italic">
+                            <i class="fas fa-lock mr-1"></i> The 10-minute re-upload window has expired.
+                        </div>
+                    `;
+
+                    li.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div class="w-full">
+                                <p class="font-bold text-gray-800 text-sm leading-tight">${reqGroup.requirement_name}</p>
+                                <div class="flex flex-wrap">
+                                    ${fileLinks}
+                                </div>
+                            </div>
+                        </div>
+                        ${editForm}
+                    `;
+                    list.appendChild(li);
+                });
+            }
+
+            const modal = document.getElementById('docsModal');
+            const content = document.getElementById('docsModalContent');
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => content.classList.add('modal-enter-active'));
+        }
+
+        // Audit Trail Logic
+        function openAuditTrail(appId) {
+            document.getElementById('auditModalAppId').innerText = `Tracking App ID: #${String(appId).padStart(5, '0')}`;
             const logsData = document.getElementById('logs_' + appId).textContent;
             const logs = JSON.parse(logsData);
-            
             const timeline = document.getElementById('auditTimeline');
-            timeline.innerHTML = ''; // Clear previous
+            timeline.innerHTML = '';
 
             if (logs.length === 0) {
                 timeline.innerHTML = '<li class="text-gray-500 text-sm ml-4">No tracking history found.</li>';
             } else {
                 logs.forEach((log, index) => {
-                    // Check if it's the latest log to give it a glowing dot effect
                     const isLatest = index === 0; 
                     const dotClass = isLatest ? 'bg-emerald-500 ring-4 ring-emerald-100' : 'bg-gray-300 ring-4 ring-white';
                     const titleClass = isLatest ? 'text-emerald-700 font-extrabold' : 'text-gray-700 font-bold';
-
                     const li = document.createElement('li');
                     li.className = "pl-8 relative";
-                    
-                    // Format Date nicely
                     const dateObj = new Date(log.created_at);
                     const formattedDate = dateObj.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
 
@@ -165,7 +380,6 @@ if (!empty($applications)) {
                 });
             }
 
-            // Show Modal
             const modal = document.getElementById('auditModal');
             const content = document.getElementById('auditModalContent');
             modal.classList.remove('hidden');
