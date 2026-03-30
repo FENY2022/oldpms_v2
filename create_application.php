@@ -363,7 +363,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
             </div>
             
             <div class="p-6 space-y-4 text-sm text-gray-700 max-h-[60vh] overflow-y-auto file-list">
-                <p class="mb-2 text-gray-500">Please review your information before submitting. Once confirmed, your application will be forwarded for review.</p>
+                <p class="mb-2 text-gray-500">Please review your information before submitting. Once confirmed, your application will be forwarded to CENRO FUU for review.</p>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                     <div>

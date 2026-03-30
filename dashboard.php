@@ -21,6 +21,21 @@ if (isset($_GET['action']) && $_GET['action'] == 'logout') {
 $firstName = htmlspecialchars($_SESSION['firstname']);
 $lastName = htmlspecialchars($_SESSION['lastname']);
 $email = htmlspecialchars($_SESSION['email']);
+$client_id = $_SESSION['client_id'] ?? null;
+$profile_picture = null;
+
+// Fetch the latest profile picture from the database
+if ($client_id) {
+    try {
+        $user_stmt = $pdo->prepare("SELECT profile_picture FROM user_client WHERE client_id = ?");
+        $user_stmt->execute([$client_id]);
+        if ($user_data = $user_stmt->fetch(PDO::FETCH_ASSOC)) {
+            $profile_picture = $user_data['profile_picture'];
+        }
+    } catch (PDOException $e) {
+        // Silently fallback if error
+    }
+}
 
 // Fetch Requirements from Database to use in the Modal
 try {
@@ -72,7 +87,7 @@ try {
             <a href="#" class="flex items-center gap-3 text-emerald-100 hover:bg-emerald-800 hover:text-white px-4 py-3 rounded-xl font-medium transition nav-item">
                 <i class="fas fa-folder-open w-5 text-emerald-400"></i> Documents
             </a>
-            <a href="#" class="flex items-center gap-3 text-emerald-100 hover:bg-emerald-800 hover:text-white px-4 py-3 rounded-xl font-medium transition nav-item">
+            <a href="#" onclick="loadIframe('profile_settings.php', this)" class="flex items-center gap-3 text-emerald-100 hover:bg-emerald-800 hover:text-white px-4 py-3 rounded-xl font-medium transition nav-item">
                 <i class="fas fa-user-circle w-5 text-emerald-400"></i> Profile Settings
             </a>
         </nav>
@@ -100,9 +115,15 @@ try {
                     <span class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-white text-[8px] text-white flex items-center justify-center font-bold">2</span>
                 </button>
                 <div class="flex items-center gap-3 pl-6 border-l border-gray-200">
-                    <div class="h-10 w-10 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-lg shadow-inner">
-                        <?= strtoupper(substr($firstName, 0, 1)) ?>
-                    </div>
+                    
+                    <?php if (!empty($profile_picture) && file_exists($profile_picture)): ?>
+                        <img src="<?= htmlspecialchars($profile_picture) ?>" alt="Profile" class="h-10 w-10 rounded-full object-cover shadow-inner border border-gray-200">
+                    <?php else: ?>
+                        <div class="h-10 w-10 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-lg shadow-inner">
+                            <?= strtoupper(substr($firstName, 0, 1)) ?>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="hidden md:block">
                         <p class="text-sm font-bold text-gray-800 leading-tight"><?= $firstName . ' ' . $lastName ?></p>
                         <p class="text-xs text-gray-500"><?= $email ?></p>
