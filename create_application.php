@@ -172,6 +172,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
         .file-list::-webkit-scrollbar { width: 4px; }
         .file-list::-webkit-scrollbar-track { background: transparent; }
         .file-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* Smooth step transitions */
+        .form-step { animation: fadeIn 0.4s ease-in-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen pb-20">
@@ -189,81 +196,112 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
         <div class="w-24 sm:w-32"></div> 
     </nav>
 
-    <form method="POST" enctype="multipart/form-data" id="applicationForm" class="max-w-5xl mx-auto mt-10 px-4">
-        
+    <div class="max-w-5xl mx-auto mt-10 px-4 mb-6 text-center">
+        <h2 class="text-3xl font-extrabold text-gray-900">Create <?= $app_type ?> Application</h2>
+        <p class="text-gray-500 mt-2">Complete the steps below to submit your application for review.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 max-w-3xl mx-auto">
+        <div class="flex justify-between items-center relative px-4 sm:px-10">
+            <div class="absolute left-10 right-10 sm:left-20 sm:right-20 top-5 h-1 bg-gray-200 z-0 rounded"></div>
+            
+            <div class="flex flex-col items-center relative z-10 bg-white">
+                <div id="stepper-icon-1" class="w-10 h-10 flex items-center justify-center bg-emerald-600 text-white rounded-full font-bold shadow-md transition-colors ring-4 ring-white">1</div>
+                <div id="stepper-text-1" class="text-sm font-bold text-emerald-700 mt-2 text-center">Applicant Info</div>
+            </div>
+            
+            <div class="flex flex-col items-center relative z-10 bg-white">
+                <div id="stepper-icon-2" class="w-10 h-10 flex items-center justify-center bg-gray-200 text-gray-500 rounded-full font-bold transition-colors ring-4 ring-white">2</div>
+                <div id="stepper-text-2" class="text-sm font-medium text-gray-400 mt-2 text-center">Location</div>
+            </div>
+            
+            <div class="flex flex-col items-center relative z-10 bg-white">
+                <div id="stepper-icon-3" class="w-10 h-10 flex items-center justify-center bg-gray-200 text-gray-500 rounded-full font-bold transition-colors ring-4 ring-white">3</div>
+                <div id="stepper-text-3" class="text-sm font-medium text-gray-400 mt-2 text-center">Requirements</div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="applicationForm" class="max-w-4xl mx-auto px-4">
         <input type="hidden" name="submit_application" value="1">
 
-        <div class="mb-8">
-            <h2 class="text-3xl font-extrabold text-gray-900">Create <?= $app_type ?> Application</h2>
-            <p class="text-gray-500 mt-2">Complete the information below and upload your scanned PDF documents to submit your application. You may upload multiple PDFs per requirement.</p>
-        </div>
-
-        <div class="bg-white p-6 sm:p-10 rounded-2xl shadow-sm border border-gray-100 mb-8">
-            <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <span class="bg-emerald-100 text-emerald-700 h-8 w-8 rounded-full flex items-center justify-center text-sm">1</span> 
-                Applicant & Business Information
-            </h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Full Name</label>
-                    <div class="relative">
-                        <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" readonly value="<?= htmlspecialchars($user['firstname'] . ' ' . $user['mid_name'] . ' ' . $user['lastname']) ?>" class="w-full bg-gray-50 border border-gray-200 text-gray-500 rounded-xl pl-10 pr-4 py-3 cursor-not-allowed select-none">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
-                    <div class="relative">
-                        <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" readonly value="<?= htmlspecialchars($user['email']) ?>" class="w-full bg-gray-50 border border-gray-200 text-gray-500 rounded-xl pl-10 pr-4 py-3 cursor-not-allowed select-none">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Mobile Number</label>
-                    <div class="relative">
-                        <i class="fas fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" readonly value="<?= htmlspecialchars($user['mobilenum']) ?>" class="w-full bg-gray-50 border border-gray-200 text-gray-500 rounded-xl pl-10 pr-4 py-3 cursor-not-allowed select-none">
-                    </div>
-                </div>
+        <div id="step-1" class="form-step block">
+            <div class="bg-white p-6 sm:p-10 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3 border-b pb-4">
+                    <i class="fas fa-id-card text-emerald-600"></i> Applicant & Business Information
+                </h3>
                 
-                <div class="md:col-span-2 border-t border-gray-100 pt-6 mt-2">
-                    <h4 class="text-sm font-bold text-gray-800 mb-4 bg-yellow-50 text-yellow-800 border border-yellow-200 inline-block px-4 py-1.5 rounded-lg"><i class="fas fa-exclamation-circle mr-2"></i> Action Required: Fill out remaining details</h4>
-                </div>
-
-                <?php if ($app_type == 'Renewal'): ?>
-                <div class="md:col-span-2 bg-blue-50 border border-blue-200 p-5 rounded-xl mb-2">
-                    <label class="block text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">Existing Permit Reference No. / Lumber Dealer No. <span class="text-red-500">*</span></label>
-                    <div class="relative">
-                        <i class="fas fa-sync-alt absolute left-4 top-1/2 -translate-y-1/2 text-blue-400"></i>
-                        <input type="text" id="reference_number" name="reference_number" required placeholder="Enter your previous permit or reference number" class="w-full bg-white border border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-800 rounded-xl pl-10 pr-4 py-3 transition outline-none shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Full Name</label>
+                        <div class="relative">
+                            <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" readonly value="<?= htmlspecialchars($user['firstname'] . ' ' . $user['mid_name'] . ' ' . $user['lastname']) ?>" class="w-full bg-gray-50 border border-gray-200 text-gray-500 rounded-xl pl-10 pr-4 py-3 cursor-not-allowed select-none">
+                        </div>
                     </div>
-                </div>
-                <?php endif; ?>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
+                        <div class="relative">
+                            <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" readonly value="<?= htmlspecialchars($user['email']) ?>" class="w-full bg-gray-50 border border-gray-200 text-gray-500 rounded-xl pl-10 pr-4 py-3 cursor-not-allowed select-none">
+                        </div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Mobile Number</label>
+                        <div class="relative">
+                            <i class="fas fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" readonly value="<?= htmlspecialchars($user['mobilenum']) ?>" class="w-full bg-gray-50 border border-gray-200 text-gray-500 rounded-xl pl-10 pr-4 py-3 cursor-not-allowed select-none">
+                        </div>
+                    </div>
+                    
+                    <div class="md:col-span-2 border-t border-gray-100 pt-6 mt-2">
+                        <h4 class="text-sm font-bold text-gray-800 mb-4 bg-yellow-50 text-yellow-800 border border-yellow-200 inline-block px-4 py-1.5 rounded-lg"><i class="fas fa-exclamation-circle mr-2"></i> Action Required: Fill out remaining details</h4>
+                    </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Type of Application <span class="text-red-500">*</span></label>
-                    <select id="applicant_type" name="applicant_type" required class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm cursor-pointer">
-                        <option value="" disabled selected>Select Type</option>
-                        <option value="Individual">Individual</option>
-                        <option value="Association">Association</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Business / Trade Name <span class="text-red-500">*</span></label>
-                    <input type="text" id="business_name" name="business_name" required placeholder="Enter registered business name" class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">TIN Number <span class="text-red-500">*</span></label>
-                    <input type="text" id="tin_number" name="tin_number" required placeholder="000-000-000-000" class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm">
+                    <?php if ($app_type == 'Renewal'): ?>
+                    <div class="md:col-span-2 bg-blue-50 border border-blue-200 p-5 rounded-xl mb-2">
+                        <label class="block text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">Existing Permit Reference No. / Lumber Dealer No. <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <i class="fas fa-sync-alt absolute left-4 top-1/2 -translate-y-1/2 text-blue-400"></i>
+                            <input type="text" id="reference_number" name="reference_number" required placeholder="Enter your previous permit or reference number" class="w-full bg-white border border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-800 rounded-xl pl-10 pr-4 py-3 transition outline-none shadow-sm">
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Type of Application <span class="text-red-500">*</span></label>
+                        <select id="applicant_type" name="applicant_type" required class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm cursor-pointer">
+                            <option value="" disabled selected>Select Type</option>
+                            <option value="Individual">Individual</option>
+                            <option value="Association">Association</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Business / Trade Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="business_name" name="business_name" required placeholder="Enter registered business name" class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">TIN Number <span class="text-red-500">*</span></label>
+                        <input type="text" id="tin_number" name="tin_number" required placeholder="000-000-000-000" class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm">
+                    </div>
                 </div>
             </div>
+            
+            <div class="flex justify-end pt-2">
+                <button type="button" onclick="nextStep()" class="w-full sm:w-auto bg-emerald-700 text-white px-10 py-4 rounded-xl font-bold hover:bg-emerald-800 shadow-xl shadow-emerald-900/20 transition active:scale-[0.98] text-lg flex items-center justify-center gap-3">
+                    Next Step <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
 
-            <div class="mt-8 border-t border-gray-100 pt-6">
-                <h4 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider"><i class="fas fa-map-marker-alt text-emerald-600 mr-2"></i> Business Address Location</h4>
+        <div id="step-2" class="form-step hidden">
+            <div class="bg-white p-6 sm:p-10 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3 border-b pb-4">
+                    <i class="fas fa-map-marker-alt text-emerald-600"></i> Business Address Location
+                </h3>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="lg:col-span-2">
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Province <span class="text-red-500">*</span></label>
                         <select id="province" name="province_id" required class="w-full bg-white border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-800 rounded-xl px-4 py-3 transition outline-none shadow-sm cursor-pointer">
@@ -300,58 +338,70 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
                 </div>
             </div>
 
-        </div>
-
-        <div class="bg-white p-6 sm:p-10 rounded-2xl shadow-sm border border-gray-100 mb-8">
-            <h3 class="text-xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                <span class="bg-emerald-100 text-emerald-700 h-8 w-8 rounded-full flex items-center justify-center text-sm">2</span> 
-                Upload Requirements
-            </h3>
-            <p class="text-gray-500 text-sm mb-8 sm:ml-11">Please upload the required documents below. All files must be strictly in <strong class="text-red-500">PDF format</strong>. You can select multiple files at once.</p>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:ml-11">
-                <?php foreach($requirements as $req): ?>
-                    <?php 
-                        // Flag to check if this is the specific optional requirement for New applications
-                        $is_optional_req6 = ($app_type == 'New' && $req['id'] == 6); 
-                    ?>
-                    
-                    <div class="relative">
-                        <?php if ($is_optional_req6): ?>
-                            <div class="absolute top-2 right-2 z-20 flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-200">
-                                <span class="text-xs font-bold text-gray-600">Comply?</span>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" name="include_req_6" value="yes" id="toggle_req_6" class="sr-only peer" onchange="toggleReq6()">
-                                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-                                </label>
-                            </div>
-                        <?php endif; ?>
-
-                        <div id="upload_box_<?= $req['id'] ?>" class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-emerald-500 transition bg-slate-50 relative group flex flex-col items-center justify-center min-h-[160px] w-full <?= $is_optional_req6 ? 'opacity-50 grayscale pointer-events-none' : '' ?>">
-                            <input type="file" name="req_<?= $req['id'] ?>[]" id="input_req_<?= $req['id'] ?>" accept=".pdf" multiple <?= $is_optional_req6 ? '' : 'required' ?> 
-                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                                onchange="updateFileName(this, 'file_name_<?= $req['id'] ?>')">
-                            
-                            <i class="upload-icon fas fa-cloud-upload-alt text-3xl text-gray-400 group-hover:text-emerald-500 transition mb-3"></i>
-                            <p class="font-bold text-gray-800 text-sm mb-1 leading-snug px-2"><?= htmlspecialchars($req['requirement_name']) ?> <span class="text-red-500 <?= $is_optional_req6 ? 'hidden' : '' ?>" id="asterisk_<?= $req['id'] ?>">*</span></p>
-                            
-                            <?php if($req['id'] == 2): ?>
-                                <p class="text-[10px] text-gray-400 px-2 leading-tight mb-2">(Not required if applicant is a mini-sawmill permittee)</p>
-                            <?php else: ?>
-                                <p class="text-xs text-gray-500 mb-2">Click or drag PDF(s) to upload</p>
-                            <?php endif; ?>
-                            
-                            <div id="file_name_<?= $req['id'] ?>" class="text-xs font-bold text-emerald-700 mt-2 w-full px-2 max-h-24 overflow-y-auto file-list text-left space-y-1"></div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
+            <div class="flex flex-col-reverse sm:flex-row justify-between pt-2 gap-4">
+                <button type="button" onclick="prevStep()" class="w-full sm:w-auto bg-white border border-gray-300 text-gray-700 px-8 py-4 rounded-xl font-bold hover:bg-gray-50 transition active:scale-[0.98] text-lg flex items-center justify-center gap-3">
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+                <button type="button" onclick="nextStep()" class="w-full sm:w-auto bg-emerald-700 text-white px-10 py-4 rounded-xl font-bold hover:bg-emerald-800 shadow-xl shadow-emerald-900/20 transition active:scale-[0.98] text-lg flex items-center justify-center gap-3">
+                    Next Step <i class="fas fa-arrow-right"></i>
+                </button>
             </div>
         </div>
 
-        <div class="flex justify-end pt-4">
-            <button type="submit" id="submitBtn" class="w-full sm:w-auto bg-emerald-700 text-white px-10 py-4 rounded-xl font-bold hover:bg-emerald-800 shadow-xl shadow-emerald-900/20 transition active:scale-[0.98] text-lg flex items-center justify-center gap-3">
-                Submit Application <i class="fas fa-paper-plane"></i>
-            </button>
+        <div id="step-3" class="form-step hidden">
+            <div class="bg-white p-6 sm:p-10 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+                    <i class="fas fa-file-upload text-emerald-600"></i> Upload Requirements
+                </h3>
+                <p class="text-gray-500 text-sm mb-8">Please upload the required documents below. All files must be strictly in <strong class="text-red-500">PDF format</strong>. You can select multiple files at once.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <?php foreach($requirements as $req): ?>
+                        <?php 
+                            // Flag to check if this is the specific optional requirement for New applications
+                            $is_optional_req6 = ($app_type == 'New' && $req['id'] == 6); 
+                        ?>
+                        
+                        <div class="relative">
+                            <?php if ($is_optional_req6): ?>
+                                <div class="absolute top-2 right-2 z-20 flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-200">
+                                    <span class="text-xs font-bold text-gray-600">Comply?</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="include_req_6" value="yes" id="toggle_req_6" class="sr-only peer" onchange="toggleReq6()">
+                                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                                    </label>
+                                </div>
+                            <?php endif; ?>
+
+                            <div id="upload_box_<?= $req['id'] ?>" class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-emerald-500 transition bg-slate-50 relative group flex flex-col items-center justify-center min-h-[160px] w-full <?= $is_optional_req6 ? 'opacity-50 grayscale pointer-events-none' : '' ?>">
+                                <input type="file" name="req_<?= $req['id'] ?>[]" id="input_req_<?= $req['id'] ?>" accept=".pdf" multiple <?= $is_optional_req6 ? '' : 'required' ?> 
+                                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                                    onchange="updateFileName(this, 'file_name_<?= $req['id'] ?>')">
+                                
+                                <i class="upload-icon fas fa-cloud-upload-alt text-3xl text-gray-400 group-hover:text-emerald-500 transition mb-3"></i>
+                                <p class="font-bold text-gray-800 text-sm mb-1 leading-snug px-2"><?= htmlspecialchars($req['requirement_name']) ?> <span class="text-red-500 <?= $is_optional_req6 ? 'hidden' : '' ?>" id="asterisk_<?= $req['id'] ?>">*</span></p>
+                                
+                                <?php if($req['id'] == 2): ?>
+                                    <p class="text-[10px] text-gray-400 px-2 leading-tight mb-2">(Not required if applicant is a mini-sawmill permittee)</p>
+                                <?php else: ?>
+                                    <p class="text-xs text-gray-500 mb-2">Click or drag PDF(s) to upload</p>
+                                <?php endif; ?>
+                                
+                                <div id="file_name_<?= $req['id'] ?>" class="text-xs font-bold text-emerald-700 mt-2 w-full px-2 max-h-24 overflow-y-auto file-list text-left space-y-1"></div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="flex flex-col-reverse sm:flex-row justify-between pt-2 gap-4">
+                <button type="button" onclick="prevStep()" class="w-full sm:w-auto bg-white border border-gray-300 text-gray-700 px-8 py-4 rounded-xl font-bold hover:bg-gray-50 transition active:scale-[0.98] text-lg flex items-center justify-center gap-3">
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+                <button type="submit" id="submitBtn" class="w-full sm:w-auto bg-emerald-700 text-white px-10 py-4 rounded-xl font-bold hover:bg-emerald-800 shadow-xl shadow-emerald-900/20 transition active:scale-[0.98] text-lg flex items-center justify-center gap-3">
+                    Review & Submit <i class="fas fa-check-circle"></i>
+                </button>
+            </div>
         </div>
     </form>
 
@@ -400,6 +450,75 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
     </div>
 
     <script>
+        // ==========================================
+        // MULTI-STEP FORM NAVIGATION LOGIC
+        // ==========================================
+        let currentStep = 1;
+        const totalSteps = 3;
+
+        function updateStepper() {
+            for (let i = 1; i <= totalSteps; i++) {
+                const stepDiv = document.getElementById('step-' + i);
+                const stepperIcon = document.getElementById('stepper-icon-' + i);
+                const stepperText = document.getElementById('stepper-text-' + i);
+                
+                if (i === currentStep) {
+                    stepDiv.classList.remove('hidden');
+                    stepDiv.classList.add('block');
+                    // Active style
+                    stepperIcon.className = "w-10 h-10 flex items-center justify-center bg-emerald-600 text-white rounded-full font-bold shadow-md transition-colors ring-4 ring-white";
+                    stepperIcon.innerHTML = i;
+                    stepperText.className = "text-sm font-bold text-emerald-700 mt-2 text-center";
+                } else if (i < currentStep) {
+                    stepDiv.classList.remove('block');
+                    stepDiv.classList.add('hidden');
+                    // Completed style
+                    stepperIcon.className = "w-10 h-10 flex items-center justify-center bg-emerald-100 text-emerald-600 rounded-full font-bold transition-colors ring-4 ring-white";
+                    stepperIcon.innerHTML = '<i class="fas fa-check"></i>';
+                    stepperText.className = "text-sm font-semibold text-emerald-600 mt-2 text-center";
+                } else {
+                    stepDiv.classList.remove('block');
+                    stepDiv.classList.add('hidden');
+                    // Pending style
+                    stepperIcon.className = "w-10 h-10 flex items-center justify-center bg-gray-200 text-gray-500 rounded-full font-bold transition-colors ring-4 ring-white";
+                    stepperIcon.innerHTML = i;
+                    stepperText.className = "text-sm font-medium text-gray-400 mt-2 text-center";
+                }
+            }
+        }
+
+        function validateStep(stepIndex) {
+            const stepDiv = document.getElementById(`step-${stepIndex}`);
+            // Find all elements that can be validated, excluding disabled ones
+            const inputs = stepDiv.querySelectorAll('input:not(:disabled), select:not(:disabled), textarea:not(:disabled)');
+            for (let input of inputs) {
+                if (!input.checkValidity()) {
+                    input.reportValidity(); // Triggers the browser's native error tooltip
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function nextStep() {
+            if (validateStep(currentStep)) {
+                currentStep++;
+                updateStepper();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function prevStep() {
+            currentStep--;
+            updateStepper();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+
+        // ==========================================
+        // EXISTING LOGIC 
+        // ==========================================
+
         // --- Optional Requirement Toggle Logic ---
         function toggleReq6() {
             const toggle = document.getElementById('toggle_req_6');
@@ -410,27 +529,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
             const icon = box.querySelector('.upload-icon');
 
             if (toggle.checked) {
-                // Enable the box
                 box.classList.remove('opacity-50', 'grayscale', 'pointer-events-none');
                 input.required = true;
                 asterisk.classList.remove('hidden');
-                
-                // ADDED: Toast Notification
                 showToast("Requirement included. Please upload the document.", "success");
             } else {
-                // Disable the box
                 box.classList.add('opacity-50', 'grayscale', 'pointer-events-none');
                 input.required = false;
                 asterisk.classList.add('hidden');
-                
-                // Clear selected files & reset styles
                 input.value = '';
                 fileList.innerHTML = '';
                 box.classList.remove('border-emerald-500', 'bg-emerald-50');
                 box.classList.add('border-gray-300', 'bg-slate-50');
                 icon.classList.replace('text-emerald-500', 'text-gray-400');
-                
-                // ADDED: Toast Notification
                 showToast("Requirement marked as optional and skipped.", "success");
             }
         }
@@ -447,8 +558,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
         // Handle Province Change -> Load Municipalities
         provinceSelect.addEventListener('change', function() {
             const selectedProv = this.value;
-            
-            // Reset downstream selects
             muncitySelect.innerHTML = '<option value="" disabled selected>Select Municipality</option>';
             brgySelect.innerHTML = '<option value="" disabled selected>Select City/Municipality first</option>';
             brgySelect.disabled = true;
@@ -456,14 +565,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
             brgySelect.classList.remove('bg-white', 'text-gray-800', 'cursor-pointer');
             zipCodeInput.value = '';
 
-            // Filter municipalities
             const filteredMuncities = muncitiesData.filter(m => m.prov_code === selectedProv);
-            
             if (filteredMuncities.length > 0) {
                 muncitySelect.disabled = false;
                 muncitySelect.classList.remove('bg-gray-50', 'text-gray-500', 'cursor-not-allowed');
                 muncitySelect.classList.add('bg-white', 'text-gray-800', 'cursor-pointer');
-                
                 filteredMuncities.forEach(m => {
                     const option = document.createElement('option');
                     option.value = m.mun_code;
@@ -479,24 +585,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
         // Handle Municipality Change -> Load Barangays & Set Zip Code
         muncitySelect.addEventListener('change', function() {
             const selectedMun = this.value;
-            
-            // Auto-fill zip code
             const selectedOption = this.options[this.selectedIndex];
             if(selectedOption.dataset.zipcode) {
                 zipCodeInput.value = selectedOption.dataset.zipcode;
             }
 
-            // Reset Barangay select
             brgySelect.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
-            
-            // Filter barangays
             const filteredBarangays = barangaysData.filter(b => b.mun_code === selectedMun);
 
             if (filteredBarangays.length > 0) {
                 brgySelect.disabled = false;
                 brgySelect.classList.remove('bg-gray-50', 'text-gray-500', 'cursor-not-allowed');
                 brgySelect.classList.add('bg-white', 'text-gray-800', 'cursor-pointer');
-                
                 filteredBarangays.forEach(b => {
                     const option = document.createElement('option');
                     option.value = b.brgy_code;
@@ -508,8 +608,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
             }
         });
 
-
-        // --- 1. Dynamic Multiple File Name Display System ---
+        // --- Dynamic Multiple File Name Display System ---
         function updateFileName(input, textId) {
             const listContainer = document.getElementById(textId);
             const containerBox = input.parentElement;
@@ -519,11 +618,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
                 let htmlList = '';
                 let isValid = true;
 
-                // Loop through all selected files to display them and validate
                 for(let i = 0; i < input.files.length; i++) {
                     const fileName = input.files[i].name;
-                    
-                    // Validate PDF
                     if(!fileName.toLowerCase().endsWith('.pdf')) {
                         isValid = false;
                         break;
@@ -533,7 +629,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
 
                 if(!isValid) {
                     showToast("Please select strictly PDF files only.", "error");
-                    input.value = ''; // Reset input
+                    input.value = ''; // Reset
                     listContainer.innerHTML = '';
                     containerBox.classList.remove('border-emerald-500', 'bg-emerald-50');
                     containerBox.classList.add('border-gray-300', 'bg-slate-50');
@@ -542,8 +638,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
                 }
 
                 listContainer.innerHTML = htmlList;
-                
-                // Change Styles to indicate success
                 containerBox.classList.add('border-emerald-500', 'bg-emerald-50');
                 containerBox.classList.remove('border-gray-300', 'bg-slate-50');
                 icon.classList.replace('text-gray-400', 'text-emerald-500');
@@ -555,30 +649,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
             }
         }
 
-        // --- 2. Form Submission Intercept & Modal Logic ---
+        // --- Form Submission Intercept & Modal Logic ---
         let isConfirmed = false;
         const form = document.getElementById('applicationForm');
         const modal = document.getElementById('confirmationModal');
         const modalInner = document.getElementById('modalInner');
 
         form.addEventListener('submit', function(e) {
-            // If the user hasn't confirmed via the modal yet, intercept the submission
+            // Prevent Enter-key submission on early steps
+            if (currentStep < totalSteps) {
+                e.preventDefault();
+                nextStep();
+                return;
+            }
+
+            // Show confirmation Modal for Final step
             if (!isConfirmed) {
                 e.preventDefault(); 
                 
-                // Populate Modal Summary Details
                 document.getElementById('summary_applicant_type').textContent = document.getElementById('applicant_type').value || 'N/A';
                 document.getElementById('summary_business_name').textContent = document.getElementById('business_name').value || 'N/A';
                 document.getElementById('summary_tin_number').textContent = document.getElementById('tin_number').value || 'N/A';
                 
                 <?php if ($app_type == 'Renewal'): ?>
                 const refInput = document.getElementById('reference_number');
-                if(refInput) {
-                    document.getElementById('summary_reference_number').textContent = refInput.value || 'N/A';
-                }
+                if(refInput) document.getElementById('summary_reference_number').textContent = refInput.value || 'N/A';
                 <?php endif; ?>
 
-                // Construct full address by grabbing the text of the selected options
                 const provText = provinceSelect.options[provinceSelect.selectedIndex]?.text || '';
                 const munText = muncitySelect.options[muncitySelect.selectedIndex]?.text || '';
                 const brgyText = brgySelect.options[brgySelect.selectedIndex]?.text || '';
@@ -594,9 +691,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
 
                 document.getElementById('summary_full_address').textContent = addressParts.join(', ') || 'N/A';
 
-                // Display the Modal with Tailwind Transitions
                 modal.classList.remove('hidden');
-                // Force browser reflow to enable transition
                 void modal.offsetWidth; 
                 modal.classList.remove('opacity-0');
                 modalInner.classList.remove('scale-95');
@@ -604,44 +699,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
             }
         });
 
-        // Close Modal Function
         function closeConfirmationModal() {
             modal.classList.add('opacity-0');
             modalInner.classList.remove('scale-100');
             modalInner.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
         }
 
         document.getElementById('closeModalBtn').addEventListener('click', closeConfirmationModal);
         document.getElementById('cancelSubmitBtn').addEventListener('click', closeConfirmationModal);
 
-        // Final Confirm Submit Button
         document.getElementById('confirmSubmitBtn').addEventListener('click', function() {
             isConfirmed = true; 
             
-            // Visual feedback on the modal's confirm button
             this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
             this.classList.add('opacity-75', 'cursor-not-allowed');
             this.style.pointerEvents = "none";
             document.getElementById('cancelSubmitBtn').style.pointerEvents = "none";
             document.getElementById('closeModalBtn').style.pointerEvents = "none";
             
-            // Visual feedback on the main form button behind the modal
             const mainBtn = document.getElementById('submitBtn');
             mainBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing Uploads...';
             mainBtn.classList.add('opacity-75', 'cursor-not-allowed');
             
-            // Programmatically submit the form to bypass the event listener
             form.submit(); 
         });
 
-        // --- 3. Toast Notification System ---
+        // --- Toast Notification System ---
         function showToast(message, type = "success") {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            
             const bgColor = type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
             const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
 
@@ -649,7 +736,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
             toast.innerHTML = `<i class="fas ${icon} text-xl"></i><span class="font-semibold tracking-wide">${message}</span>`;
             
             container.appendChild(toast);
-
             requestAnimationFrame(() => toast.classList.add('toast-enter-active'));
 
             setTimeout(() => {
@@ -663,7 +749,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
         <?php if (!empty($success_msg)): ?>
             showToast("<?= addslashes($success_msg) ?>", "success");
             setTimeout(() => {
-                // CHANGED window.parent.location.href to window.top.location.href
                 window.top.location.href = 'dashboard.php';
             }, 2000);
         <?php endif; ?>
