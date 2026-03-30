@@ -109,60 +109,64 @@ try {
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-6 lg:p-10">
+        <main class="flex-1 relative flex flex-col min-h-0 bg-slate-50">
             
-            <div class="mb-8">
-                <h2 class="text-3xl font-extrabold text-gray-900">Welcome back, <?= $firstName ?>! 👋</h2>
-                <p class="text-gray-500 mt-1">Here is the overview of your lumber dealer applications.</p>
+            <div id="dashboardContent" class="p-6 lg:p-10 overflow-y-auto flex-1">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-extrabold text-gray-900">Welcome back, <?= $firstName ?>! 👋</h2>
+                    <p class="text-gray-500 mt-1">Here is the overview of your lumber dealer applications.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-5">
+                        <div class="h-14 w-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Applications</p>
+                            <h3 class="text-3xl font-black text-gray-800">0</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-5">
+                        <div class="h-14 w-14 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center text-2xl">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Pending Review</p>
+                            <h3 class="text-3xl font-black text-gray-800">0</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-5">
+                        <div class="h-14 w-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Approved Permits</p>
+                            <h3 class="text-3xl font-black text-gray-800">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-slate-50">
+                        <h3 class="font-bold text-gray-800 text-lg">Recent Applications</h3>
+                        
+                        <button onclick="openModal('appTypeModal')" class="bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-800 transition shadow-sm">
+                            <i class="fas fa-plus mr-1"></i> Lumber Application
+                        </button>
+
+                    </div>
+                    <div class="p-8 text-center">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 text-gray-400 mb-4">
+                            <i class="fas fa-folder-open text-2xl"></i>
+                        </div>
+                        <h4 class="text-gray-900 font-bold mb-1">No applications found</h4>
+                        <p class="text-gray-500 text-sm max-w-sm mx-auto">You haven't submitted any lumber dealer permit applications yet. Click the button above to start your first application.</p>
+                    </div>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-5">
-                    <div class="h-14 w-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">
-                        <i class="fas fa-file-invoice"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Applications</p>
-                        <h3 class="text-3xl font-black text-gray-800">0</h3>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-5">
-                    <div class="h-14 w-14 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center text-2xl">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Pending Review</p>
-                        <h3 class="text-3xl font-black text-gray-800">0</h3>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-5">
-                    <div class="h-14 w-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Approved Permits</p>
-                        <h3 class="text-3xl font-black text-gray-800">0</h3>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-slate-50">
-                    <h3 class="font-bold text-gray-800 text-lg">Recent Applications</h3>
-                    
-                    <button onclick="openModal('appTypeModal')" class="bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-800 transition shadow-sm">
-                        <i class="fas fa-plus mr-1"></i> Lumber Application
-                    </button>
-
-                </div>
-                <div class="p-8 text-center">
-                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 text-gray-400 mb-4">
-                        <i class="fas fa-folder-open text-2xl"></i>
-                    </div>
-                    <h4 class="text-gray-900 font-bold mb-1">No applications found</h4>
-                    <p class="text-gray-500 text-sm max-w-sm mx-auto">You haven't submitted any lumber dealer permit applications yet. Click the button above to start your first application.</p>
-                </div>
-            </div>
+            <iframe id="appIframe" class="hidden w-full h-full flex-1 border-none bg-slate-50 z-10" src=""></iframe>
 
         </main>
     </div>
@@ -320,10 +324,16 @@ try {
                     </div>`;
             }
 
-            // Set Proceed Button Action (Update 'create_application.php' to your actual file)
+            // Updated Proceed Button Action to open inside the iframe
             const proceedBtn = document.getElementById('proceedBtn');
             proceedBtn.onclick = () => {
-                window.location.href = `create_application.php?type=${type.toLowerCase()}`;
+                closeModal('requirementsModal');
+                
+                // Hide dashboard overview and show iframe
+                document.getElementById('dashboardContent').classList.add('hidden');
+                const iframe = document.getElementById('appIframe');
+                iframe.src = `create_application.php?type=${type.toLowerCase()}`;
+                iframe.classList.remove('hidden');
             };
 
             // Open Requirements Modal (with a slight delay so the App Type modal closes smoothly)
