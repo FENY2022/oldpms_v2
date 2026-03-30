@@ -61,16 +61,18 @@ try {
         </div>
 
         <nav class="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
-            <a href="dashboard.php" class="flex items-center gap-3 bg-emerald-800 text-white px-4 py-3 rounded-xl font-semibold transition">
+            <a href="#" onclick="showDashboard()" class="flex items-center gap-3 bg-emerald-800 text-white px-4 py-3 rounded-xl font-semibold transition nav-item active-nav">
                 <i class="fas fa-home w-5 text-emerald-400"></i> Dashboard
             </a>
-            <a href="#" class="flex items-center gap-3 text-emerald-100 hover:bg-emerald-800 hover:text-white px-4 py-3 rounded-xl font-medium transition">
+            
+            <a href="#" onclick="loadIframe('my_applications.php', this)" class="flex items-center gap-3 text-emerald-100 hover:bg-emerald-800 hover:text-white px-4 py-3 rounded-xl font-medium transition nav-item">
                 <i class="fas fa-file-alt w-5 text-emerald-400"></i> My Applications
             </a>
-            <a href="#" class="flex items-center gap-3 text-emerald-100 hover:bg-emerald-800 hover:text-white px-4 py-3 rounded-xl font-medium transition">
+            
+            <a href="#" class="flex items-center gap-3 text-emerald-100 hover:bg-emerald-800 hover:text-white px-4 py-3 rounded-xl font-medium transition nav-item">
                 <i class="fas fa-folder-open w-5 text-emerald-400"></i> Documents
             </a>
-            <a href="#" class="flex items-center gap-3 text-emerald-100 hover:bg-emerald-800 hover:text-white px-4 py-3 rounded-xl font-medium transition">
+            <a href="#" class="flex items-center gap-3 text-emerald-100 hover:bg-emerald-800 hover:text-white px-4 py-3 rounded-xl font-medium transition nav-item">
                 <i class="fas fa-user-circle w-5 text-emerald-400"></i> Profile Settings
             </a>
         </nav>
@@ -232,6 +234,36 @@ try {
         // Pass PHP requirements array into a Javascript Variable
         const dbRequirements = <?php echo json_encode($requirements ?: []); ?>;
 
+        // Function to show the main dashboard content and hide the iframe
+        function showDashboard() {
+            document.getElementById('appIframe').classList.add('hidden');
+            document.getElementById('appIframe').src = ''; // Clear iframe memory
+            document.getElementById('dashboardContent').classList.remove('hidden');
+            updateActiveNav(event ? event.currentTarget : document.querySelector('nav a:first-child'));
+        }
+
+        // Function to hide the dashboard content and load a URL into the iframe
+        function loadIframe(url, element = null) {
+            document.getElementById('dashboardContent').classList.add('hidden');
+            const iframe = document.getElementById('appIframe');
+            iframe.src = url;
+            iframe.classList.remove('hidden');
+            if(element) updateActiveNav(element);
+        }
+
+        // Function to handle active states on sidebar navigation
+        function updateActiveNav(activeElement) {
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                // Reset to inactive state classes
+                item.className = "flex items-center gap-3 text-emerald-100 hover:bg-emerald-800 hover:text-white px-4 py-3 rounded-xl font-medium transition nav-item";
+            });
+            // Set active state classes for clicked element
+            if(activeElement) {
+                activeElement.className = "flex items-center gap-3 bg-emerald-800 text-white px-4 py-3 rounded-xl font-semibold transition nav-item active-nav";
+            }
+        }
+
         // Modal Open/Close functionality
         function openModal(id) {
             const modal = document.getElementById(id);
@@ -328,12 +360,7 @@ try {
             const proceedBtn = document.getElementById('proceedBtn');
             proceedBtn.onclick = () => {
                 closeModal('requirementsModal');
-                
-                // Hide dashboard overview and show iframe
-                document.getElementById('dashboardContent').classList.add('hidden');
-                const iframe = document.getElementById('appIframe');
-                iframe.src = `create_application.php?type=${type.toLowerCase()}`;
-                iframe.classList.remove('hidden');
+                loadIframe(`create_application.php?type=${type.toLowerCase()}`);
             };
 
             // Open Requirements Modal (with a slight delay so the App Type modal closes smoothly)

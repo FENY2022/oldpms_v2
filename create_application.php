@@ -134,6 +134,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
             }
         }
 
+        // --- NEW: Add initial Audit Trail Log ---
+        $action = "Application Submitted";
+        $remarks = "Your " . $app_type . " application has been successfully submitted and is now Pending Review.";
+        $stmtLog = $pdo->prepare("INSERT INTO application_logs (app_id, action, remarks) VALUES (?, ?, ?)");
+        $stmtLog->execute([$new_app_id, $action, $remarks]);
+        // ----------------------------------------
+
         $pdo->commit();
         $success_msg = "Application submitted successfully!";
         
