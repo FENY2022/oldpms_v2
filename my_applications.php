@@ -11,7 +11,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 require_once 'db.php';
 $client_id = $_SESSION['client_id'];
 
-// --- Handle Re-upload of PDF Files (Multiple Files Support & 10 min Limit) ---
+// --- Handle Re-upload of PDF Files (Multiple Files Support & 3 min Limit) ---
 $upload_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'reupload_file') {
     $req_id = intval($_POST['requirement_id']);
@@ -24,10 +24,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     if ($app_data && $app_data['client_id'] == $client_id) {
         
-        // 10-Minute Check (600 seconds)
+        // 3-Minute Check (180 seconds)
         $time_elapsed = time() - strtotime($app_data['date_submitted']);
         
-        if ($time_elapsed <= 600) {
+        if ($time_elapsed <= 180) {
             if (isset($_FILES['new_files']) && !empty($_FILES['new_files']['name'][0])) {
                 $upload_dir = 'uploads/applications/';
                 if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $upload_msg = "No files selected.";
             }
         } else {
-            $upload_msg = "Re-upload time limit (10 minutes) has expired.";
+            $upload_msg = "Re-upload time limit (3 minutes) has expired.";
         }
     } else {
         $upload_msg = "Error uploading file or permission denied.";
@@ -203,7 +203,7 @@ if (!empty($applications)) {
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <?php foreach ($applications as $app): 
                 $time_elapsed = time() - strtotime($app['date_submitted']);
-                $can_edit = ($time_elapsed <= 600); // 600 seconds = 10 minutes
+                $can_edit = ($time_elapsed <= 180); // 180 seconds = 3 minutes
             ?>
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col hover:border-emerald-300 transition-colors">
                     <div class="p-6 flex-1">
@@ -276,14 +276,39 @@ if (!empty($applications)) {
             </div>
             <div class="p-6 overflow-y-auto flex-1 bg-slate-50">
                 <p class="text-xs text-gray-500 mb-4 bg-yellow-50 text-yellow-800 border border-yellow-200 p-3 rounded-lg">
-                    <i class="fas fa-info-circle"></i> You can view your submitted documents below. The re-upload window is strictly available for <strong>10 minutes</strong> after submitting your application.
+                    <i class="fas fa-info-circle"></i> You can view your submitted documents below. The re-upload window is strictly available for <strong>3 minutes</strong> after submitting your application.
                 </p>
                 <ul id="docsList" class="space-y-4"></ul>
             </div>
         </div>
     </div>
 
+    <div id="pdfModal" class="fixed inset-0 z-[70] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] overflow-hidden flex flex-col transition-all transform modal-enter" id="pdfModalContent">
+            <div class="bg-gray-900 p-4 text-white flex justify-between items-center shrink-0">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fas fa-file-pdf text-red-400"></i> <span id="pdfModalTitle">View Document</span>
+                </h3>
+                <button onclick="closeModal('pdfModal')" class="hover:bg-gray-700 bg-gray-800 p-2 h-8 w-8 flex items-center justify-center rounded-full transition"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flex-1 bg-gray-100 relative w-full h-full">
+                <iframe id="pdfIframe" src="" class="w-full h-full border-none"></iframe>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // PDF Viewer Logic
+        function openPdfModal(filePath, title) {
+            document.getElementById('pdfModalTitle').innerText = title;
+            document.getElementById('pdfIframe').src = filePath + '#toolbar=0'; // '#toolbar=0' hides standard PDF toolbars on some browsers for a cleaner look
+            
+            const modal = document.getElementById('pdfModal');
+            const content = document.getElementById('pdfModalContent');
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => content.classList.add('modal-enter-active'));
+        }
+
         // File / Documents Logic
         function openDocsModal(appId) {
             document.getElementById('docsModalAppId').innerText = `Tracking App ID: #${String(appId).padStart(5, '0')}`;
@@ -305,14 +330,17 @@ if (!empty($applications)) {
                     const li = document.createElement('li');
                     li.className = "bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3 transition hover:border-blue-300";
                     
-                    // Generate view links for all files under this requirement
-                    let fileLinks = reqGroup.files.map((f, index) => `
-                        <a href="${f.file_path}" target="_blank" class="text-xs font-bold text-blue-600 hover:text-blue-800 mt-2 mr-2 inline-flex items-center gap-1 bg-blue-50 px-2 py-1 rounded border border-blue-100">
-                            <i class="fas fa-external-link-alt"></i> File ${index + 1}
-                        </a>
-                    `).join('');
+                    // Generate view buttons (triggers Modal) for all files under this requirement
+                    let fileLinks = reqGroup.files.map((f, index) => {
+                        // Create a safe, escaped title for the JS function
+                        const safeTitle = (reqGroup.requirement_name + ' - File ' + (index + 1)).replace(/'/g, "\\'");
+                        return `
+                        <button type="button" onclick="openPdfModal('${f.file_path}', '${safeTitle}')" class="text-xs font-bold text-blue-600 hover:text-blue-800 mt-2 mr-2 inline-flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 transition hover:bg-blue-200">
+                            <i class="fas fa-eye"></i> View File ${index + 1}
+                        </button>
+                    `}).join('');
 
-                    // Show reupload form if within 10 minutes, else show lock message
+                    // Show reupload form if within 3 minutes, else show lock message
                     let editForm = canEdit ? `
                         <form method="POST" enctype="multipart/form-data" class="mt-2 pt-3 border-t border-gray-100 flex items-center gap-3">
                             <input type="hidden" name="action" value="reupload_file">
@@ -325,7 +353,7 @@ if (!empty($applications)) {
                         </form>
                     ` : `
                         <div class="mt-1 pt-2 border-t border-gray-100 text-xs text-red-500 italic">
-                            <i class="fas fa-lock mr-1"></i> The 10-minute re-upload window has expired.
+                            <i class="fas fa-lock mr-1"></i> The 3-minute re-upload window has expired.
                         </div>
                     `;
 
@@ -370,11 +398,17 @@ if (!empty($applications)) {
                     const dateObj = new Date(log.created_at);
                     const formattedDate = dateObj.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
 
+                    // Sanitize log properties to prevent XSS
+                    const safeAction = log.action ? log.action.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
+                    const safeRemarks = log.remarks ? log.remarks.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
+
                     li.innerHTML = `
                         <div class="absolute w-3 h-3 rounded-full -left-[7px] top-1.5 ${dotClass}"></div>
-                        <p class="text-sm ${titleClass} mb-1">${log.action}</p>
-                        ${log.remarks ? `<p class="text-xs text-gray-500 leading-relaxed mb-2">${log.remarks}</p>` : ''}
-                        <span class="text-[10px] uppercase font-bold text-gray-400 font-mono tracking-wider"><i class="far fa-clock mr-1"></i> ${formattedDate}</span>
+                        <div class="flex flex-col pb-2">
+                            <p class="text-sm ${titleClass} mb-1">${safeAction}</p>
+                            ${safeRemarks ? `<div class="bg-white border border-gray-200 rounded-md p-3 mb-2 shadow-sm"><p class="text-xs text-gray-600 leading-relaxed italic"><i class="fas fa-quote-left text-gray-300 mr-1"></i> ${safeRemarks}</p></div>` : ''}
+                            <span class="text-[10px] uppercase font-bold text-gray-400 font-mono tracking-wider"><i class="far fa-clock mr-1"></i> ${formattedDate}</span>
+                        </div>
                     `;
                     timeline.appendChild(li);
                 });
@@ -390,7 +424,15 @@ if (!empty($applications)) {
             const modal = document.getElementById(id);
             const content = document.getElementById(id + 'Content');
             content.classList.remove('modal-enter-active');
-            setTimeout(() => modal.classList.add('hidden'), 200);
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                
+                // If closing the PDF modal, clear the iframe source to stop background processes/memory leaks
+                if (id === 'pdfModal') {
+                    document.getElementById('pdfIframe').src = '';
+                }
+            }, 200);
         }
     </script>
 </body>

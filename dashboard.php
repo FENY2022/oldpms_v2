@@ -61,7 +61,7 @@ try {
         </div>
 
         <nav class="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
-            <a href="#" onclick="showDashboard()" class="flex items-center gap-3 bg-emerald-800 text-white px-4 py-3 rounded-xl font-semibold transition nav-item active-nav">
+            <a href="#" id="nav-dashboard" onclick="showDashboard(this)" class="flex items-center gap-3 bg-emerald-800 text-white px-4 py-3 rounded-xl font-semibold transition nav-item active-nav">
                 <i class="fas fa-home w-5 text-emerald-400"></i> Dashboard
             </a>
             
@@ -230,16 +230,44 @@ try {
         </div>
     </div>
 
+    <div id="docViewerModal" class="fixed inset-0 z-[70] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[85vh] overflow-hidden flex flex-col transition-all transform modal-enter" id="docViewerModalContent">
+            <div class="bg-gray-900 p-4 text-white flex justify-between items-center shrink-0">
+                <h3 class="text-lg font-bold flex items-center gap-2"><i class="fas fa-file-alt text-blue-400"></i> Document Viewer</h3>
+                <div class="flex items-center gap-3">
+                    <a id="docViewerDownloadBtn" href="#" download class="hover:bg-gray-700 p-2 rounded-lg transition text-sm font-bold flex items-center gap-2">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                    <button onclick="closeDocViewer()" class="hover:bg-red-600 bg-gray-800 p-2 h-8 w-8 flex items-center justify-center rounded-full transition"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+            <div class="flex-1 bg-gray-100 relative w-full h-full">
+                <div class="absolute inset-0 flex items-center justify-center text-gray-400 -z-10 pointer-events-none">
+                    <div class="text-center">
+                        <i class="fas fa-circle-notch fa-spin text-3xl mb-2"></i>
+                        <p>Loading document viewer...</p>
+                    </div>
+                </div>
+                <iframe id="docViewerIframe" class="w-full h-full border-0 bg-white" src=""></iframe>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Pass PHP requirements array into a Javascript Variable
         const dbRequirements = <?php echo json_encode($requirements ?: []); ?>;
 
         // Function to show the main dashboard content and hide the iframe
-        function showDashboard() {
+        function showDashboard(element = null) {
             document.getElementById('appIframe').classList.add('hidden');
             document.getElementById('appIframe').src = ''; // Clear iframe memory
             document.getElementById('dashboardContent').classList.remove('hidden');
-            updateActiveNav(event ? event.currentTarget : document.querySelector('nav a:first-child'));
+            
+            const navElement = element || document.getElementById('nav-dashboard');
+            updateActiveNav(navElement);
+            
+            // Save state to sessionStorage
+            sessionStorage.setItem('currentView', 'dashboard');
         }
 
         // Function to hide the dashboard content and load a URL into the iframe
@@ -248,8 +276,29 @@ try {
             const iframe = document.getElementById('appIframe');
             iframe.src = url;
             iframe.classList.remove('hidden');
-            if(element) updateActiveNav(element);
+            
+            if(element) {
+                updateActiveNav(element);
+            } else {
+                // Try to find the matching navigation item by URL
+                const matchingNav = document.querySelector(`nav a[onclick*="${url}"]`);
+                updateActiveNav(matchingNav); 
+            }
+
+            // Save state to sessionStorage
+            sessionStorage.setItem('currentView', url);
         }
+
+        // Check sessionStorage on Page Load to restore the last viewed page
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedView = sessionStorage.getItem('currentView');
+            
+            if (savedView && savedView !== 'dashboard') {
+                loadIframe(savedView);
+            } else {
+                showDashboard();
+            }
+        });
 
         // Function to handle active states on sidebar navigation
         function updateActiveNav(activeElement) {
@@ -258,6 +307,7 @@ try {
                 // Reset to inactive state classes
                 item.className = "flex items-center gap-3 text-emerald-100 hover:bg-emerald-800 hover:text-white px-4 py-3 rounded-xl font-medium transition nav-item";
             });
+            
             // Set active state classes for clicked element
             if(activeElement) {
                 activeElement.className = "flex items-center gap-3 bg-emerald-800 text-white px-4 py-3 rounded-xl font-semibold transition nav-item active-nav";
@@ -270,7 +320,11 @@ try {
             const content = document.getElementById(id + 'Content');
             
             modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            
+            // Only hide overflow if we aren't opening a modal on top of another modal
+            if(id !== 'docViewerModal') {
+                document.body.style.overflow = 'hidden'; 
+            }
             
             // Add slight animation
             requestAnimationFrame(() => {
@@ -286,8 +340,31 @@ try {
             
             setTimeout(() => {
                 modal.classList.add('hidden');
-                document.body.style.overflow = 'auto'; // Re-enable background scrolling
-            }, 200); // match transition duration
+                // Only reset overflow if doc viewer isn't active
+                if (!document.getElementById('docViewerModal').classList.contains('hidden') === false) {
+                    document.body.style.overflow = 'auto'; 
+                }
+            }, 200); 
+        }
+
+        // Document Viewer Logic (NEW)
+        function viewDocumentOnline(url) {
+            const iframe = document.getElementById('docViewerIframe');
+            const downloadBtn = document.getElementById('docViewerDownloadBtn');
+            
+            // Provide exact URL to iframe and download button
+            iframe.src = url;
+            downloadBtn.href = url;
+            
+            openModal('docViewerModal');
+        }
+
+        function closeDocViewer() {
+            closeModal('docViewerModal');
+            // Clear iframe to stop playback/rendering in background
+            setTimeout(() => {
+                document.getElementById('docViewerIframe').src = '';
+            }, 200);
         }
 
         // Navigate back to the App Type selection
@@ -326,10 +403,16 @@ try {
                         
                         let downloadLinkHTML = '';
                         if (req.download_link && req.download_link.trim() !== '') {
+                            // ADDED View Online Button alongside the download button
                             downloadLinkHTML = `
-                                <a href="${req.download_link}" download class="mt-3 inline-flex items-center text-xs font-bold text-emerald-600 hover:text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg transition">
-                                    <i class="fas fa-download mr-1.5"></i> Download Template
-                                </a>`;
+                                <div class="flex flex-wrap gap-2 mt-3">
+                                    <button onclick="viewDocumentOnline('${req.download_link}')" type="button" class="inline-flex items-center text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1.5 rounded-lg transition border border-blue-100">
+                                        <i class="fas fa-eye mr-1.5"></i> View Online
+                                    </button>
+                                    <a href="${req.download_link}" download class="inline-flex items-center text-xs font-bold text-emerald-600 hover:text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg transition border border-emerald-100">
+                                        <i class="fas fa-download mr-1.5"></i> Download Template
+                                    </a>
+                                </div>`;
                         }
 
                         li.innerHTML = `
