@@ -17,15 +17,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $req_id = intval($_POST['requirement_id']);
     $app_id = intval($_POST['app_id']);
 
-    // Security Check: Ensure this application belongs to the logged-in client
-    $verify_stmt = $pdo->prepare("SELECT client_id, date_submitted FROM permit_applications WHERE app_id = ?");
+    // Security Check: Ensure this app belongs to the logged-in client AND calculate time difference in MySQL directly
+    $verify_stmt = $pdo->prepare("
+        SELECT client_id, TIMESTAMPDIFF(SECOND, date_submitted, NOW()) as seconds_elapsed 
+        FROM permit_applications 
+        WHERE app_id = ?
+    ");
     $verify_stmt->execute([$app_id]);
     $app_data = $verify_stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($app_data && $app_data['client_id'] == $client_id) {
         
-        // 3-Minute Check (180 seconds)
-        $time_elapsed = time() - strtotime($app_data['date_submitted']);
+        // Use the exact seconds elapsed calculated by the database
+        $time_elapsed = (int)$app_data['seconds_elapsed'];
         
         if ($time_elapsed <= 180) {
             if (isset($_FILES['new_files']) && !empty($_FILES['new_files']['name'][0])) {
@@ -92,8 +96,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// 1. Fetch Applications for the Current Client
-$stmt = $pdo->prepare("SELECT * FROM permit_applications WHERE client_id = ? ORDER BY app_id DESC");
+// 1. Fetch Applications for the Current Client and calculate exact seconds passed via DB
+$stmt = $pdo->prepare("
+    SELECT *, TIMESTAMPDIFF(SECOND, date_submitted, NOW()) as seconds_elapsed 
+    FROM permit_applications 
+    WHERE client_id = ? 
+    ORDER BY app_id DESC
+");
 $stmt->execute([$client_id]);
 $applications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -202,8 +211,8 @@ if (!empty($applications)) {
     <?php else: ?>
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <?php foreach ($applications as $app): 
-                $time_elapsed = time() - strtotime($app['date_submitted']);
-                $can_edit = ($time_elapsed <= 180); // 180 seconds = 3 minutes
+                // We now strictly use the database's elapsed time logic
+                $can_edit = ((int)$app['seconds_elapsed'] <= 180); 
             ?>
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col hover:border-emerald-300 transition-colors">
                     <div class="p-6 flex-1">
@@ -301,7 +310,7 @@ if (!empty($applications)) {
         // PDF Viewer Logic
         function openPdfModal(filePath, title) {
             document.getElementById('pdfModalTitle').innerText = title;
-            document.getElementById('pdfIframe').src = filePath + '#toolbar=0'; // '#toolbar=0' hides standard PDF toolbars on some browsers for a cleaner look
+            document.getElementById('pdfIframe').src = filePath + '#toolbar=0'; 
             
             const modal = document.getElementById('pdfModal');
             const content = document.getElementById('pdfModalContent');
@@ -332,7 +341,6 @@ if (!empty($applications)) {
                     
                     // Generate view buttons (triggers Modal) for all files under this requirement
                     let fileLinks = reqGroup.files.map((f, index) => {
-                        // Create a safe, escaped title for the JS function
                         const safeTitle = (reqGroup.requirement_name + ' - File ' + (index + 1)).replace(/'/g, "\\'");
                         return `
                         <button type="button" onclick="openPdfModal('${f.file_path}', '${safeTitle}')" class="text-xs font-bold text-blue-600 hover:text-blue-800 mt-2 mr-2 inline-flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 transition hover:bg-blue-200">
@@ -398,7 +406,6 @@ if (!empty($applications)) {
                     const dateObj = new Date(log.created_at);
                     const formattedDate = dateObj.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
 
-                    // Sanitize log properties to prevent XSS
                     const safeAction = log.action ? log.action.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
                     const safeRemarks = log.remarks ? log.remarks.replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
 
@@ -428,7 +435,6 @@ if (!empty($applications)) {
             setTimeout(() => {
                 modal.classList.add('hidden');
                 
-                // If closing the PDF modal, clear the iframe source to stop background processes/memory leaks
                 if (id === 'pdfModal') {
                     document.getElementById('pdfIframe').src = '';
                 }
