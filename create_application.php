@@ -72,34 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
     
     try {
         $pdo->beginTransaction();
-        
-        // --- Helper: Auto-create tables if they don't exist yet ---
-        $pdo->exec("CREATE TABLE IF NOT EXISTS `permit_applications` (
-            `app_id` int(11) NOT NULL AUTO_INCREMENT,
-            `client_id` int(11) NOT NULL,
-            `app_type` varchar(50) NOT NULL,
-            `applicant_type` varchar(50) NOT NULL,
-            `business_name` varchar(255) NOT NULL,
-            `tin_number` varchar(50) NOT NULL,
-            `reference_number` varchar(100) DEFAULT NULL,
-            `province_id` varchar(20) DEFAULT NULL,
-            `muncity_id` varchar(20) DEFAULT NULL,
-            `brgy_id` varchar(20) DEFAULT NULL,
-            `zip_code` varchar(20) DEFAULT NULL,
-            `street_address` text DEFAULT NULL,
-            `status` varchar(50) DEFAULT 'Pending Review',
-            `date_submitted` datetime DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (`app_id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-        
-        $pdo->exec("CREATE TABLE IF NOT EXISTS `permit_requirements_files` (
-            `file_id` int(11) NOT NULL AUTO_INCREMENT,
-            `app_id` int(11) NOT NULL,
-            `requirement_id` int(11) NOT NULL,
-            `file_path` text NOT NULL,
-            PRIMARY KEY (`file_id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-        // -----------------------------------------------------------
 
         // Insert Application Record
         $stmtApp = $pdo->prepare("INSERT INTO permit_applications (client_id, app_type, applicant_type, business_name, tin_number, reference_number, province_id, muncity_id, brgy_id, zip_code, street_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -166,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
         $success_msg = "Application submitted successfully!";
         
     } catch (Exception $e) {
-        $pdo->rollBack();
+        $pdo->rollBack(); // Now this will work properly if an exception is thrown
         $error_msg = $e->getMessage();
     }
 }
@@ -379,7 +351,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
 
     <script>
         // --- Optional Requirement Toggle Logic ---
-// --- Optional Requirement Toggle Logic ---
         function toggleReq6() {
             const toggle = document.getElementById('toggle_req_6');
             const box = document.getElementById('upload_box_6');
