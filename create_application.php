@@ -179,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
     <div id="toast-container" class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-3 pointer-events-none w-full max-w-md"></div>
 
     <nav class="bg-emerald-900 text-white h-16 flex items-center justify-between px-6 sticky top-0 z-50 shadow-md">
-        <a href="dashboard.php" target="_parent" class="flex items-center gap-2 text-emerald-200 hover:text-white font-semibold transition">
+        <a href="dashboard.php" target="_top" class="flex items-center gap-2 text-emerald-200 hover:text-white font-semibold transition">
             <i class="fas fa-arrow-left"></i> <span class="hidden sm:inline">Back to Dashboard</span>
         </a>
         <div class="font-black tracking-tight text-lg uppercase flex items-center gap-3">
@@ -663,7 +663,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
         <?php if (!empty($success_msg)): ?>
             showToast("<?= addslashes($success_msg) ?>", "success");
             setTimeout(() => {
-                window.parent.location.href = 'dashboard.php';
+                // CHANGED window.parent.location.href to window.top.location.href
+                window.top.location.href = 'dashboard.php';
             }, 2000);
         <?php endif; ?>
 
