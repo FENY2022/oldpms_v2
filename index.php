@@ -4,6 +4,9 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 
+// Start Session for Login
+session_start();
+
 require_once 'db.php';
 
 // Create user_client table if it doesn't exist
@@ -89,6 +92,51 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_contact'])) {
     }
     exit; // Stop further execution to keep JSON clean
 }
+
+// Handle Account Login Submission
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_login'])) {
+    header('Content-Type: application/json'); // Ensure JSON response
+    
+    $email = trim($_POST['email']);
+    $password = $_POST['password'];
+
+    if (!empty($email) && !empty($password)) {
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM user_client WHERE email = :email LIMIT 1");
+            $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+            $stmt->execute();
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Check if user exists and verify password hash
+            if ($user && password_verify($password, $user['password'])) {
+                
+                // Check if account status is active (Status = 1)
+                if ($user['Status'] == 0) {
+                    echo json_encode(['status' => 'error', 'message' => 'Your account is not verified yet. Please check your email to verify your account.']);
+                    exit;
+                }
+
+                // Create session variables
+                $_SESSION['client_id'] = $user['client_id'];
+                $_SESSION['firstname'] = $user['firstname'];
+                $_SESSION['lastname'] = $user['lastname'];
+                $_SESSION['email'] = $user['email'];
+                $_SESSION['logged_in'] = true;
+
+                // Send success response with redirect URL (Change 'dashboard.php' to your actual dashboard page)
+                echo json_encode(['status' => 'success', 'message' => 'Login successful! Redirecting...', 'redirect' => 'dashboard.php']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Invalid email or password.']);
+            }
+        } catch (PDOException $e) {
+            echo json_encode(['status' => 'error', 'message' => 'Database error occurred.']);
+        }
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Please enter both email and password.']);
+    }
+    exit;
+}
+
 // Fetch Requirements from Database
 $req_stmt = $pdo->query("SELECT * FROM requirements ORDER BY sequence ASC");
 $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -317,12 +365,10 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
             <div>
                 <h3 class="text-3xl font-bold mb-6">Contact Us</h3>
                 
-                <?= $contact_msg ?>
+                <?= isset($contact_msg) ? $contact_msg : '' ?>
 
-            <!-- Locate your contact form in index.php and update the ID -->
             <form id="contactForm" method="POST" action="index.php" class="space-y-4">
-                <input type="hidden" name="submit_contact" value="1"> <!-- Hidden field to trigger PHP -->
-                <input type="text" name="name" required placeholder="Your Name *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                <input type="hidden" name="submit_contact" value="1"> <input type="text" name="name" required placeholder="Your Name *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
                 <input type="email" name="email" required placeholder="Your Email address *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
                 <input type="text" name="subject" placeholder="Subject" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
                 <textarea name="message" required rows="4" placeholder="Message *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition"></textarea>
@@ -375,8 +421,8 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                     <i class="fas fa-times text-lg"></i>
                 </button>
             </div>
-            <form action="login_auth.php" method="POST" class="p-8 space-y-6">
-                <div>
+            <form id="loginForm" method="POST" action="index.php" class="p-8 space-y-6">
+                <input type="hidden" name="submit_login" value="1"> <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
                     <div class="relative">
                         <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
@@ -401,7 +447,8 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                     </label>
                     <div class="flex items-center justify-between mt-4">
                         <a href="forgot_password.php" class="text-sm text-blue-500 hover:text-blue-800">Forgot Password?</a>
-                    </div>                </div>
+                    </div>                
+                </div>
                 <button type="submit" class="w-full bg-emerald-700 text-white font-bold py-4 rounded-xl hover:bg-emerald-800 shadow-lg shadow-emerald-900/20 transition-all active:scale-[0.98]">
                     Sign In
                 </button>
@@ -591,11 +638,49 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                     return;
                 }
 
-                // --- 3. DEFAULT BEHAVIOR (LOGIN FORM) ---
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
-                    submitBtn.innerHTML = `<span class="loader"></span> Processing...`;
+                // --- 3. HANDLE LOGIN FORM (AJAX) ---
+                if (this.id === 'loginForm') {
+                    e.preventDefault();
+
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+                        submitBtn.innerHTML = `<span class="loader"></span> Authenticating...`;
+                    }
+
+                    const formData = new FormData(this);
+                    formData.append('submit_login', '1');
+
+                    fetch('index.php', {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            showToast(data.message, "success");
+                            // Wait a short moment so the toast is visible before redirecting
+                            setTimeout(() => {
+                                window.location.href = data.redirect;
+                            }, 1000);
+                        } else {
+                            showToast(data.message, "error");
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showToast("Authentication error. Please try again.", "error");
+                    })
+                    .finally(() => {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                            submitBtn.innerHTML = originalBtnText;
+                        }
+                    });
+
+                    return;
                 }
             });
         });
