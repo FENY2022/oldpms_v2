@@ -66,13 +66,18 @@ try {
 </head>
 <body class="bg-slate-50 flex h-screen overflow-hidden">
 
-    <aside class="w-64 bg-emerald-900 text-white flex flex-col hidden md:flex shadow-2xl z-20">
-        <div class="h-20 flex items-center gap-3 px-6 bg-emerald-950 border-b border-emerald-800">
-            <img src="logo/denr_logo.png" alt="DENR Logo" class="h-10 w-10">
-            <div>
-                <span class="text-xl font-black tracking-tighter block leading-none">O-LDPMS</span>
-                <span class="text-[9px] uppercase font-bold text-emerald-400 tracking-widest">CARAGA REGION</span>
+    <aside id="sidebar" class="w-64 bg-emerald-900 text-white flex flex-col absolute md:relative z-[100] h-full shadow-2xl transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
+        <div class="h-20 flex items-center justify-between px-6 bg-emerald-950 border-b border-emerald-800">
+            <div class="flex items-center gap-3">
+                <img src="logo/denr_logo.png" alt="DENR Logo" class="h-10 w-10">
+                <div>
+                    <span class="text-xl font-black tracking-tighter block leading-none">O-LDPMS</span>
+                    <span class="text-[9px] uppercase font-bold text-emerald-400 tracking-widest">CARAGA REGION</span>
+                </div>
             </div>
+            <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white focus:outline-none">
+                <i class="fas fa-times text-xl"></i>
+            </button>
         </div>
 
         <nav class="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
@@ -103,7 +108,7 @@ try {
         
         <header class="h-20 bg-white shadow-sm flex items-center justify-between px-6 lg:px-10 z-10 border-b border-gray-200">
             <div class="flex items-center gap-4">
-                <button class="md:hidden text-gray-500 hover:text-emerald-700 focus:outline-none">
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-500 hover:text-emerald-700 focus:outline-none">
                     <i class="fas fa-bars text-xl"></i>
                 </button>
                 <h1 class="text-xl font-bold text-gray-800 hidden sm:block">Client Portal</h1>
@@ -278,6 +283,38 @@ try {
         // Pass PHP requirements array into a Javascript Variable
         const dbRequirements = <?php echo json_encode($requirements ?: []); ?>;
 
+        // --- NEW: Function to toggle sidebar on mobile ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        // --- NEW: Function to close sidebar when an item is clicked on mobile ---
+        function closeSidebarOnMobile() {
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('sidebar');
+                if (!sidebar.classList.contains('-translate-x-full')) {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            }
+        }
+
+        // --- FIXED: Close sidebar when clicking outside of it ---
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('sidebar');
+                // Check if the click originated from ANY toggle button
+                const isToggleBtn = event.target.closest('button[onclick="toggleSidebar()"]');
+                
+                // If the click is outside the sidebar AND not on a toggle button, close it
+                if (sidebar && !sidebar.contains(event.target) && !isToggleBtn) {
+                    if (!sidebar.classList.contains('-translate-x-full')) {
+                        sidebar.classList.add('-translate-x-full');
+                    }
+                }
+            }
+        });
+
         // Function to show the main dashboard content and hide the iframe
         function showDashboard(element = null) {
             document.getElementById('appIframe').classList.add('hidden');
@@ -289,6 +326,8 @@ try {
             
             // Save state to sessionStorage
             sessionStorage.setItem('currentView', 'dashboard');
+            
+            closeSidebarOnMobile(); 
         }
 
         // Function to hide the dashboard content and load a URL into the iframe
@@ -308,6 +347,8 @@ try {
 
             // Save state to sessionStorage
             sessionStorage.setItem('currentView', url);
+            
+            closeSidebarOnMobile(); 
         }
 
         // Check sessionStorage on Page Load to restore the last viewed page
