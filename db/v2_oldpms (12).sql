@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 05, 2026 at 02:48 PM
+-- Generation Time: Apr 05, 2026 at 04:13 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -1413,7 +1413,22 @@ INSERT INTO `denr_roles` (`role_id`, `office_level`, `role_name`, `description`)
 (12, 'REGIONAL', 'DIVISION CHIEF LPDD', 'Division Chief Licenses, Patents and Deeds Division'),
 (13, 'REGIONAL', 'TS', 'Technical Services'),
 (14, 'REGIONAL', 'RED', 'Regional Executive Director'),
-(15, 'ADMIN', 'System Admin', 'Overall System Administrator');
+(15, 'ADMIN', 'System Admin', 'Overall System Administrator'),
+(16, 'CENRO', 'FUU', 'Frontline Utility Unit - CENRO'),
+(17, 'CENRO', 'Bill Collector', 'Bill Collector - CENRO'),
+(18, 'CENRO', 'Chief RPS', 'Chief Regulation and Permitting Section - CENRO'),
+(19, 'CENRO', 'Deputy CENRO', 'Deputy CENR Officer'),
+(20, 'CENRO', 'CENR Officer', 'CENR Officer'),
+(21, 'PENRO', 'FUU', 'Frontline Utility Unit - PENRO'),
+(22, 'PENRO', 'Chief RPS', 'Chief Regulation and Permitting Section - PENRO'),
+(23, 'PENRO', 'TSD', 'Technical Services Division - PENRO'),
+(24, 'PENRO', 'PENR Officer', 'PENR Officer'),
+(25, 'REGIONAL', 'FUS STAFF', 'Forest Utilization Section Staff'),
+(26, 'REGIONAL', 'CHIEF FUS', 'Chief Forest Utilization Section'),
+(27, 'REGIONAL', 'DIVISION CHIEF LPDD', 'Division Chief Licenses, Patents and Deeds Division'),
+(28, 'REGIONAL', 'TS', 'Technical Services'),
+(29, 'REGIONAL', 'RED', 'Regional Executive Director'),
+(30, 'ADMIN', 'System Admin', 'Overall System Administrator');
 
 -- --------------------------------------------------------
 
@@ -1429,6 +1444,7 @@ CREATE TABLE `denr_users` (
   `usertype` varchar(20) NOT NULL,
   `contact_no` varchar(20) NOT NULL,
   `office_id` int(20) NOT NULL,
+  `role_id` int(11) DEFAULT NULL,
   `user_role_id` text NOT NULL,
   `uploadSignature` text NOT NULL,
   `unhashPassword` text NOT NULL
@@ -1438,103 +1454,103 @@ CREATE TABLE `denr_users` (
 -- Dumping data for table `denr_users`
 --
 
-INSERT INTO `denr_users` (`user_id`, `name`, `username`, `password`, `usertype`, `contact_no`, `office_id`, `user_role_id`, `uploadSignature`, `unhashPassword`) VALUES
-(14, 'Jobert Awa', 'jawa999', '$2y$10$FQdXNDtD2PX.Yno7GSUNue1k985LYiHrOZW7inzbdeq9yX.PfbfGC', '', '09988816379', 9, '99', '', ''),
-(15, 'ANITA E. TEJERO', 'anitatejero2024', '$2y$10$iJFtdDrAkwaEPeYoR6eYhe22lEeOfNd8sXlGh0wLzAZgM47y6Jd1S', '', '09701632535', 70, '1', 'uploads/TEJERO, ANITA ESPARES.png', 'anitatejero2024'),
-(16, 'MARITES C. ORCULLO', 'maritesorcullo2024', '$2y$10$/5zYCYwEJnX/AuxoEk49DeetxGPs7EUyCjKFkqS/2IukAMffHByRK', '', '09123456789', 69, '7', 'uploads/ORCULLO, MARITES CAJUTOC.png', 'maritesorcullo2024'),
-(17, 'Bernardina P. Moreno', 'bernardina.m2024', '$2y$10$kjAPgKxwl/SLD2bdeq87zO/qxTlURDDRen95BQSruGDKmlfS81OhS', '', '09123456789', 71, '2', '', 'bernardina.m2024'),
-(18, 'Joseph E. Langanlangan', 'joseph.la2024', '$2y$10$XKm1UxGF7E6Ka4kCrMXwOOD7eAGPdJSvFyzE9aTzUscVN910Q42He', '', '09484220749', 67, '9', 'uploads/QoxJ_WZ8.png', 'joseph.la2024'),
-(19, 'EDWIN S. ROQUILLO', 'edwinroquillo2024', '$2y$10$fMEAM59ftX1SFW2dFy5OI.NCf5BM9eHl4cJlnOw5bLcM8VhdGNhZK', '', '09213467595', 68, '8', 'uploads/DMO IV.png', 'edwinroquillo2024'),
-(20, 'Feny Anthonie V. Catalan', 'fcatalan', '$2y$10$TVGNItxEs9m7aUEyyyvFDuA8ihV5ZLitUe549wA6r5rF2mYiFPNtK', '', '09123456789', 18, '1', '', ''),
-(25, 'Roel Jumawid', 'rjumawid', '$2y$10$ykBZaTjjdoTVG6KcGUyhV.QInXCXoZOaV4l0Nu0u0Rha50kxiWDNG', '', '09123456789', 13, '1', '', ''),
-(26, 'Sidney G. Kalinawan', 'skalinawan', '$2y$10$.kXAB/0m.MsFue53Phv.fOb3Yb7LFSDGL7yho.nF9dyF/C9FhDZ8q', '', '09123456789', 12, '3', '', ''),
-(29, 'ANTHONIE FENY', 'jawa999s', '$2y$10$UHLTUFRP7Xdd1qWoFgq0Ve9zo0MMRdrs9GF5gocpRGdGikp3G.7dK', '', '09329342620', 6, 'Admin', '', ''),
-(30, 'Rodulfo T. Asperin, Jr.', 'rodulfo.jr2024', '$2y$10$44yD2C/ifAUs7AEzia/Dme8/y6fgW.jfWczwYFBSw9rqTIqZMMz16', '', '09090671159', 56, '9.1', 'uploads/Aspiren R..png', 'rodulfo.jr2024'),
-(31, 'Ramonito P. Lagahit', 'ramonito.lagahit2024', '$2y$10$OIgDqlQ.X1AF460UTxgHM.XOsFyJVg.cr04r8Uqn3SLLpl1nfFsTe', '', '09462459122', 55, '10', 'uploads/Lagahit, R..png', 'ramonito.lagahit2024'),
-(32, 'Joseph Angelus F. Palomar', 'joseph.palomar2024', '$2y$10$iU81z0QciTAz3cicGK9ks.qruW2zBKlWyqp9zCt5Zclv1/zmE2YVy', '', '09225404497', 54, '11', 'uploads/Palomar J..png', 'joseph.palomar2024'),
-(33, 'Adelfo R. Luengas, Jr.', 'adelfo.jr2024', '$2y$10$kXqWw3DdMzYV9RYs6saBH.lDuapLatKbSTfWWUPI0D9rk5KAI0.fC', '', '09465868939', 53, '12', 'uploads/Luengas, A..png', 'adelfo.jr2024'),
-(34, 'Gande D. Bagot', 'bagot2021', '$2y$10$oJPTaz5hSvvzfpmtoHySruorDMavh2y3fefzeRc/vJNj4126Hs1O2', '', '09329342620', 5, '17', '', ''),
-(36, 'Roel A. Rosales', 'roelrosales2025', '$2y$10$ea9Fov29MD8dXMGYOugudODIjlnTJNcqE6Pktwyq2MtTiEvDFxRhy', '', '09329342620', 4, '13', '', 'roelrosales2025'),
-(37, 'MILA J. GARCIA', 'garcia2021', '$2y$10$PM4H4uz.Drf1Dhp4YJEQ0OFqdBuT08Vhjvd9TaqEsijmvOw33lQou', '', '09329342620', 3, '14', '', ''),
-(38, 'REDEMTOR A. OJA', 'redemtoroja2325', '$2y$10$nf7dR5GBqLcPmrLfrmgdtOKVQ7k0mZpbOuBCJPPfKtkFRYODx/pnu', '', '09329342620', 2, '15', '', 'redemtoroja2325'),
-(39, 'MARITES M. OCAMPO', 'ocampored.21', '$2y$10$3wmoof/ql17aLsuW6rNSNup7I2lwsEhnl0cVoptkPhBIKJ1dJas/6', '', '09329342620', 1, '16', '', 'ocampored.21'),
-(47, 'CATALAN, ANTHONIE FENY V.', 'feny8858', '$2y$10$SfdnuqfiMopF9DdbKqfp9.akcgKuXeX/Ca4ArzHb.lL0dIS10MFMW', '', '09329342620', 18, '0', '', ''),
-(51, 'AFE AFE', 'feny99', '$2y$10$2Tf63KcieD7ishRdKm1rAOdyQuKBcp/6QS9.tUeyPLoy10lHkl8d6', '', '09101761895', 9, '0', '', ''),
-(53, 'JANICE L. SEMBRANO', 'janice895', '$2y$10$WPWy0ligX3YuAMXhxURjCuczlkCIUWs00wx2K1BxJNUXwk4fW0cZ.', '', '09101761895', 15, '1', 'uploads/20210728-00400002g.jpg', ''),
-(54, 'JAYKIEL D. MERCADO', 'jaykiel.me2024', '$2y$10$EwNmOvXaT7pJLArTo6QMJ.ivoGj/..boMBEZutvnqcw/HRBeYyIyO', '', '09105597356', 62, '1', 'uploads/Jered Ravelo.png', 'jaykiel.me2024'),
-(55, 'SHEKAINAH R. BULALA', 'bulala2024_pms', '$2y$10$g4D87S7bibFT/OPkwKk5Nukvjz4nNye1h9GuSAdGA102/e8d1Ychy', '', '09303458701', 62, '2', 'uploads/Shekinah Rojo-Bulala.png', 'bulala2024_pms'),
-(56, 'MA. TERESITA G. BUENA', 'ma.buena2024', '$2y$10$o8KOD8TwODmYrglZRB.9.ul/pTdHh0LPqBTPpKDwWr4jrVV/Vuz0a', '', '09260053336', 62, '7', 'uploads/Ma. Teresita Buena.png', 'ma.buena2024'),
-(57, 'CHARLES O. SULLANO', 'sullano2024_pms', '$2y$10$G0G8XfyRPU3RvmPS76M5V.ez74Ptg3Y6XbJBnoTLcBmf7tBH6newa', '', '09207235676', 62, '8', 'uploads/Charles Sullano.png', 'sullano2024_pms'),
-(58, 'GAY P. RESULLAR', 'resullar2024_pms', '$2y$10$tBxLGdotyrS7HutsB1N1e.H3uMRW3VP0pERvdx.bBpbgT4xQhEyaG', '', '09123316413', 62, '9', 'uploads/Gay P. Resullar.png', 'resullar2024_pms'),
-(59, 'ADELAIDA R. BORJA', 'adelaidaborja_25', '$2y$10$kLlXeuQXar6iKaQnJvthT.yecoYxtTDF0tkVg/ztU7WxgLOpAcU0m', '', '', 6, '12', 'uploads/JLOconer.png', 'adelaidaborja_25'),
-(60, 'FE C. DACUMOS', 'fedacumos2024', '$2y$10$pSh0lhpqTgVYuLFUP1yl5ub0W18fML1KYjti7LIESTDI2y9XKflqO', '', '', 6, '11', 'uploads/DacumosFe.jpg', 'fedacumos2024'),
-(61, 'MITZI DUMALE', 'mitzidumale2024', '$2y$10$KX54Hbaqztmgfe8u0aZZYuDi.eOLBSJ8ZYt6mVw37TxIP2un9FqdW', '', '', 6, '10', 'uploads/DumaleMitzi.jpg', 'mitzidumale2024'),
-(62, 'DAYLINDA DOLONG', 'daylindadolong2024', '$2y$10$mGyNFg37yWuMAgBagl.PJeNFOzkkUVAZi4cE/zLO2j5EIg3FrO0Fa', '', '', 6, '9.1', 'uploads/DolongDaylinda.jpg', 'daylindadolong2024'),
-(63, 'HERNAN P. RAMIREZ', 'hernanramirez2024', '$2y$10$Mj/XTIbXEG.bV7GViu1uZuwN6oJb7.QAMTRzX/VC0fVcWS2pMUks.', '', '09185244819', 15, '9', 'uploads/CENRO RAMIREZ.png', 'hernanramirez2024'),
-(64, 'ANIANA J. RADAZA', 'anianaradaza2024', '$2y$10$/gXub71pR5Ul.uyoK/m2zu3IostXRIguKbrxQd.LMrmWdCvQmgY/G', '', '09380341225', 15, '8', '', 'anianaradaza2024'),
-(65, 'ANGEL E. CONSTANTINO', 'angelconstantino2024', '$2y$10$w7Qc8UtsaBUhvZK2.q3JouLanE1a1Fzyk188XbO4w3aZsA2OaBhmq', '', '09382425444', 15, '7', 'uploads/A.CONSTANTINO1.png', 'angelconstantino2024'),
-(66, 'SWANNIE MAY O. MARTIRIZAR', 'swanniemartirizar2024', '$2y$10$bbyBdy6ERp7XMteONf9RH.XKT16SCAWscdTMg9iTkQv7RRVqCgO5m', '', '09394467760', 15, '2', 'uploads/S.Martizar1.png', 'swanniemartirizar2024'),
-(67, 'HANTEL NICHOLAS', 'hantelnicholas2024', '$2y$10$8VuaALPHBW90XzeDvAN4jugv0oXqRfWxFzYNxq2iMfhyHGipviM5O', '', '09168249250', 15, '1', 'uploads/H.NICOLAS1.jpg', 'hantelnicholas2024'),
-(68, 'RIGIL A. RUALES', 'rigilruales2024', '$2y$10$5dGH5P1MPzb9PB5//fsuX.2kCGbgHFNmx40fOZt7rMN.71OLZTtcm', '', '09461842952', 72, '1', 'uploads/Signature PDI_rigil.jpg', 'rigilruales2024'),
-(69, 'CRISLEY J. SAPID', 'crisleysapid2024', '$2y$10$a8DBmJeTx4oZG.XHVAlItOCU/0Nbw05fNfLiH0q44SfFtNRuWP8IO', '', '09630593929', 72, '7', 'uploads/Signature PDI_crisleySapid.jpg', 'crisleysapid2024'),
-(70, 'GEOFFREY Y. PADULLION', 'geoffreypadullion2024', '$2y$10$Wb9.0bwAM7.tZGVp1O3.CuIp3W1sXGFdVGTo0slOVUClKBw.CPGky', '', '09165926145', 72, '8', 'uploads/Signature PDI_padullon.jpg', 'geoffreypadullion2024'),
-(71, 'NATHANIEL E. RACHO', 'nathanielracho2024_1', '$2y$10$X3Oj9LEuPuJHYcZRTlNwX.dgk1mthqdtzeuPBOk65cjN1oAw9FyM.', '', '09995969139', 72, '9', 'uploads/penro esig.png', 'nathanielracho2024_1'),
-(72, 'GERALDINE  C. LUMBAY', 'lumbay_c2024', '$2y$10$0wt8NG0CpT1woy/8zDS0xeOwUvvaG7dBiw5/AnvIjI9Fw/d62dKLa', '', '09102787601', 20, '9.1', 'uploads/LUMBAY, GERALDINE C..jpg', 'lumbay_c2024'),
-(73, 'ISIDRO U. ARMENDAREZ', 'armendarez_u2024', '$2y$10$4ddJb.Bz1E9jPxl.fWkefuNBb4gr6eFnD/y0qxGXH/sak1UtAbBBu', '', '09102797601', 20, '10', 'uploads/ARMENDAREZ, ISIDRO U.jpg', 'armendarez_u2024'),
-(74, 'EDDIE G. DUHAYLUNGSOD', 'duhaylungsod_g2024', '$2y$10$O5ubjQSCfhxWFQc61ius/Ou1zAJ.FG0xpXRg1eE8u7JUoVj2cPiNO', '', '09639713795', 20, '11', '', 'duhaylungsod_g2024'),
-(75, 'NORMAN A. ASUGAN', 'asugan_a2024', '$2y$10$8Wdsb72i86U/FqlI3AbnEeuC/8dEjxHEY3y/lMFp85/QQOL1L2ise', '', '09192428046', 20, '12', 'uploads/DUHAYLUNGSOD, EDDIE G..png', 'asugan_a2024'),
-(76, 'REX C. PLAZA', 'rexplaza2024', '$2y$10$7qMvtobN3Xu64XLqOmXaMenCg0HOQhj1Dc09K.vRkFFZdM1pbxPDu', '', '', 34, '1', 'uploads/bardon.jpg', 'rexplaza2024'),
-(77, 'JONA E. PONGASE', 'pongase_j2024', '$2y$10$GH1b3IxVw6TkqA0zYZ10aOcoXtO4ViahV6h7Qe0iSeAjXA5oaS0tW', '', '09461482428', 34, '2', 'uploads/pongase.jpg', 'pongase_j2024'),
-(78, 'EDGAR S. PICUT', 'edgarpicut2024', '$2y$10$bslHH6NnSXdefvyoylGX8OpgfD6LQlEsU0c8WMP6.TzZjfx838Vxa', '', '09102282333', 34, '7', 'uploads/Plaza.jpg', 'edgarpicut2024'),
-(79, 'EDGAR S. PICUT', 'picut_e2024', '$2y$10$bi3w54Cro6v1Na3D6rIDPeYRHcf42oz1/1HbVta80S1pU4AXnU5hK', '', '09081820189', 34, '8', 'uploads/picut.jpg', 'picut_e2024'),
-(80, 'RACELYN A. ARGOSINO', 'argosino_r2024', '$2y$10$Bo61kb9at/U5CQ9BCGFDoO9cPTGIbEXcLrLmrAyAwllJyj1ux.4bW', '', '', 34, '9', 'uploads/Argosino.jpg', 'argosino_r2024'),
-(81, 'JAY M. VILLEGAS', 'jay.vi2024', '$2y$10$jkY1dOFpQgjngUSQAGtJ3Ol75l0JbDJTqmv46TEpRe3bu.Zmxh.H.', '', '09454514674', 57, '1', 'uploads/VILLEGAS J..png', 'jay.vi2024'),
-(82, 'Glyn Manlino', 'glyn.ma2024', '$2y$10$YMfFHciT0PzYmWS9ewHvZuvOwrY3fag6txYO1bytR9D3pzFxWjTDW', '', '09485750044', 57, '2', 'uploads/MANLINO.png', 'glyn.ma2024'),
-(83, 'MAMERTO V. VALBARES', 'valbares_v2024', '$2y$10$Wdnb3IU/PcHulXaa3/7eo.o./7qyP18UWP2Bdbzf5bwT1jtDA2uw6', '', '09109694442', 57, '7', 'uploads/chief RPS Deputy CENRO.png', 'valbares_v2024'),
-(84, 'MAMERTO V. VALBARES', 'valbares_vm2024', '$2y$10$XOElWxqqWiRj3HSEjA68i.bC1J2V09dmawzH7.ayhenMo0UJEuVUq', '', '09109694442', 57, '8', 'uploads/chief RPS Deputy CENRO.png', 'valbares_vm2024'),
-(85, 'NATHANIEL E. RACHO', 'racho_nl2024', '$2y$10$E5w15jCoR6/zdNf8Wm9BNOycWnJKUPIicRMoeGAF9eM4Jm5uz20v.', '', '09091758962', 57, '9', 'uploads/cenro e-sig.png', 'racho_nl2024'),
-(86, 'IAN Al JASON ALBERCA', 'ianalberca2024', '$2y$10$BjXjpyedL5n570ttSYsJ4ecTGu/wTkqIdAbF4Bx/jQDWbCl0D8p5e', '', '09074011690', 10, '1', 'uploads/IAN_JASON_ALBERCA SIGNATURE.png', 'ianalberca2024'),
-(87, 'JANITH M. JUMAWID', 'janith.ju2025', '$2y$10$VHSrosz8LTaRr2RBRWXBcOwwnzuLxWimZ4EjhRH9I4CvFwPsoQTPi', '', '09560559213', 10, '2', 'uploads/JOAN P. DAGUPLO SIGNATURE.png', 'janith.ju2025'),
-(88, 'MICHAEL A. MORENO', 'michaelmoreno2024', '$2y$10$oHTZoAarNZUz59jj6h/9ru9khBuBu.UcHCgjnAODjFme07JQsklMK', '', '09995956295', 10, '8', 'uploads/MICHAEL A. MORENO SIGNATURE.png', 'michaelmoreno2024'),
-(89, 'VICTOR M.MAESTRE', 'victorm.maestre', '$2y$10$XZUJMdHWB4amVbw4oKG3ZOKMySbsqnxT9Napr6DPxvWvZP0g1BHb.', '', '09092835447', 10, '7', 'uploads/MERLYNA Y.OCAYA_SIGNATURE-.png', 'victorm.maestre'),
-(90, 'NELSON B. CARANZO', 'nelsoncaranzo2024', '$2y$10$jN4J7L/IY.z9J9J6tl9JTON2YnioYAsjLcwO5.7n6pXoOoL5OJpcC', '', '09192963553', 10, '9', 'uploads/NELSON B.CARANZO SIGNATURE.png', 'nelsoncaranzo2024'),
-(91, 'IRENE D. YBAÑEZ', 'irenebanes_2024', '$2y$10$LaxHXnJZwuDnNUGk2tT66O951hHmTHq6Ho9DJVfp6gFiT7hbGVX0i', '', '09466230583', 39, '1', 'uploads/Irene D. Ybañez.png', 'irenebanes_2024'),
-(92, 'AL S. CANDIDO', 'candido_2024', '$2y$10$xOjpssy9TQIDGUt94VCJ8OMiYddV2Rf1vHp8xIc2MoyqzlhCsAzEa', '', '09510498712', 39, '2', 'uploads/4 BILL COLLECTOR AL S. CANDIDO.png', 'candido_2024'),
-(93, 'JOLITO A. PABELLAN', 'jolitopabellan2024', '$2y$10$mdLhMbP7Ya3sfUa3cxIKh.bJ5iNnLvc7seIYl9LMSLTjLUFIB5jYW', '', '09635706933', 39, '7', 'uploads/3 RPS JOLITO A. PABELLAN.png', 'jolitopabellan2024'),
-(94, 'GILBERT R. DRAGAS', 'dragas_2024', '$2y$10$XGdy6ttlE9dQQEkRLohEPeirbfdIWiie3GDTNhtJkDaJZFxfQhyfq', '', '09196051370', 39, '8', 'uploads/2 DMO IV GILBERT R. DRAGAS.png', 'dragas_2024'),
-(95, 'VINCE A. ESTOPITO', 'estopito_2024', '$2y$10$z.f9WK7OWs.cY5cPsfNWnuHeyPP8UaYdjJ5nsnmK5RV65IsKKmbwe', '', '09092873336', 39, '9', 'uploads/1 CENRO VINCE A. ESTOPITO.png', 'estopito_2024'),
-(96, 'JEMELITO A. MORALA', 'morala_2025', '$2y$10$6ikoafCQfOm1HPTgssA3F.tEheadYNZvYbc/xWflefVVo0aGVoNyG', '', '09300096954', 29, '1', 'uploads/LADRONA ROSANNA.png', 'morala_2025'),
-(97, 'LUCY U. MANCO', 'manco_2024', '$2y$10$gALDHPM0Db1xnsSinsw92ukgDhmfSqdqlKHhAqML5A9ohlMWgGe2a', '', '00000000', 29, '2', '', 'manco_2024'),
-(98, 'ELIZABETH E. DOLIGUEZ', 'doliguez_2024', '$2y$10$7MICr35EKifMHV3cV8AKCeeoC9y6IwLc4o3H8ApjM7tTCCR5JHCLq', '', '00000000000', 29, '7', 'uploads/doliguez.png', 'doliguez_2024'),
-(99, 'JOCELYN B. JANDAYAN', 'jcjandayan_2024', '$2y$10$1Y6e9ycgR/BiRHdZQhIXq.vXc84fiWBe62D3e3GjbbaFucdrE6Do.', '', '09398967501', 29, '8', 'uploads/Jandayan Jocelyn.png', 'jcjandayan_2024'),
-(100, 'JEROME H. ALBIA', 'albia_2024', '$2y$10$NfKktYzpePd1BWrU/jatjevrHB3onCPyfHIwgp2jAkyC4TuMrAW/y', '', '09995313045', 29, '9', 'uploads/albia jerome 2.png', 'albia_2024'),
-(101, 'JERWIN T. RESOLA', 'jerwin.r2024', '$2y$10$bqnQPntmIrx/Bus50XJNKeIal1.F0souMeUT2/KzRcEsP4nLYjJVS', '', '09306164246', 48, '1', 'uploads/JERWIN T. RESOLA - CHIEF RPS_ CHIEF FUU.png', 'jerwin.r2024'),
-(102, 'GLADYS JISA E. RUPEREZ', 'gladysruperez2024', '$2y$10$76jYWhdxKf3cesJN4hTzwe.fQSK/daw/SBNarKkaZI4uC5NP8zIbu', '', '09487917181', 48, '2', 'uploads/GLADYS JISA E. RUPEREZ - AAVI_ BILL COLLECTOR.png', 'gladysruperez2024'),
-(103, 'JERWIN T. RESOLA', 'jerwin.re_2024', '$2y$10$kCEP0a8e/oJT4h8ORTVGje1.w5eZt9MwFTKAjrvXvzQ6HmudHBiVy', '', '09306164246', 48, '7', 'uploads/JERWIN T. RESOLA - CHIEF RPS_ CHIEF FUU.png', 'jerwin.re_2024'),
-(104, 'FREDERICK S. LAPITAN', 'frederick.l2024', '$2y$10$TVTNEPE0WfzZ5.g/fdNSaOU2dFYtmSyNkCY/umV5iw1IyrweWmeDu', '', '09100916703', 48, '8', 'uploads/FREDERICK S. LAPITAN - DMO III_ DEPUTY CENRO.png', 'frederick.l2024'),
-(105, 'RUEL E. EFREN', 'ruelefren2024', '$2y$10$Ojz17Pur6MWq66wmfId5fO/sBeAvX9bEdW2JDzLK0HSn49tNUhhK2', '', '09299741629', 48, '9', 'uploads/RUEL E. EFREN - CENRO OFFICER.png', 'ruelefren2024'),
-(106, 'ANA MARIA C. GUNAY', 'ana.gunay2024', '$2y$10$ddasxOvmjsw9ocsPSMzMLuXl.oe74XdqR5ombtyXuw6Q31KEqNFcC', '', '09121591468', 24, '7', 'uploads/Ana Maria C. Gunay.jpg', 'ana.gunay2024'),
-(107, 'Ronijan D. Lagahit', 'lagahit_2024', '$2y$10$i5q9kYCrdY/GHBWgJnvoC.q3LlBaHNKX6d7zaepumkhydpiky79zO', '', '09177052552', 24, '2', '', 'lagahit_2024'),
-(108, 'Erlin C. Sanchez', 'sanchez_2024', '$2y$10$4mXafkkFf3aCoq.bVgjrUOJibgr7a.9Shj73Q95G8dYTBpCLUNZPq', '', '09106388456', 24, '8', 'uploads/Erlin C. Sanchez.jpg', 'sanchez_2024'),
-(109, 'SARAH P. PAREJO	', 'sarahparejo25', '$2y$10$RXVqnsIIzdUusosX.ptapuRE/AlOWqHM19OOBQg7/AgewK/sbE1p2', '', '09392152071', 24, '9', 'uploads/Parejo.jpg', 'sarahparejo25'),
-(110, 'ALILA LEIGH G. PUTANE', 'alilaputane_2025', '$2y$10$LCY0D0qYOP84svLJyjqgUOew9FyeBUZTRYfkwVLly.Q3Z4ZcZ0GJG', '', '09939889712', 24, '1', 'uploads/Leome Joy S. Magbanua.jpg', 'alilaputane_2025'),
-(111, 'ROSEMARIE P. SALVADOR', 'rose_salvador2024', '$2y$10$N5wr8cxOgRktJMztmU9uK.jyMPrWud6UwBSJBPb6uW7dsL42XN.3K', '', '09079416644', 4, '12.5', '', ''),
-(112, 'SHIOANN CHRIS B. BRANZUELA', 'shioann_c2021', '$2y$10$Xlwu9qqVBoqbfU/HvM2PKOA9DLvdabPcgeV43MX9nATjJ1oGXeYCu', '', '09486771278', 72, '2', '', ''),
-(114, 'JUAN SAMPLE', 'juan_sample', '$2y$10$7LP4AdyQo5Co.iDmKZGxIOivu30QHAU0tHQefupXM8o5UOWdVEytC', '', '09486771278', 72, '1', '', ''),
-(115, 'RIGIL A. RUALES', 'rigilruales2024p', '$2y$10$5r9Q2MVcQTg8z3vpSROZpePT8Jok0um/AhWxjhby9uNKz7CR7I5zi', '', '09486771278', 72, '9.1', '', ''),
-(116, 'CRISLEY J. SAPID', 'crisleysapid2024p', '$2y$10$wDM1FpWq65pS1bK.TOkfJuiqbXPb03TRXlt6a0Jqh/TOdlW212g1C', '', '09486771278', 72, '10', '', ''),
-(117, 'GEOFFREY Y. PADULLION', 'geoffreypadullion2024p', '$2y$10$uuCBRpWbnqU6F1qgXxeGNumgytiD7Oxu/kQM.zt5Bbcutq/UkesFW', '', '09165926145', 72, '11', '', ''),
-(118, 'NATHANIEL E. RACHO', 'nathanielracho2024', '$2y$10$.61qh0ngBxrIHgO7H/VOzOcTgQcduSZwBKiuoerIO4JZvHrUdvMJW', '', '09995969139', 72, '12', '', 'nathanielracho2024'),
-(119, 'PENRO SDN FUU', 'penro_sdnfuu2025', '$2y$10$UI3uibr66tJS8rR1pKnow.LgGytEVQWQwVeuY/5EW5KDWCh0VegKq', '', '00000000000', 44, '9.1', '', ''),
-(120, 'PENRO SDN RPS', 'penro_sdnrps2025', '$2y$10$SIamDKVUJWWH9TRCBq9e6e/zOZTlZBaK010z6UxG8tU6rBXayDY12', '', '00000000000', 44, '10', '', ''),
-(121, 'PENRO SDN TSD', 'penro_sdntsd2025', '$2y$10$dd3Oo9bbff5qbBQ0ki7iX.WFuXxGkdJElYkFehUNePGDXxjiIkoW.', '', '00000000000', 44, '11', '', ''),
-(123, 'PENRO SDN POFFICER', 'penro_sdnPENRO2025', '$2y$10$QcOTqWlfdsexHckUxX0ZWeSTVU8tbu39Csm1SpRPb4mYfX3SjL92.', '', '00000000000', 44, '12', '', ''),
-(125, 'MARIA CATHERINE G. YU', 'maria.yu2024', '$2y$10$NhdYpp6InQNkcQg3eSyyQuLdeVHH2yb2X5jw667xjTzyqPVZKNone', '', '09488261775', 1, '19', '', 'maria.yu2024'),
-(126, 'MARC KAVEN CASTANARES', 'marcka94', '$2y$10$PbTaVkaCW4mHakIHNNz6HutxgJhwmpT6r8cdNZRfSUh31TjxPtwJW', '', '09309415582', 79, '1', '', 'marcka94'),
-(127, 'MARJU P. DE JESUS', 'marjujesus_2025', '$2y$10$LNJxFMSNsZ.F8pk6HLtR..gw1ur8QHryVBAkhVSRCuMeJ09kZANvS', '', '09468273559', 77, '9', '', 'marjujesus_2025'),
-(128, 'LILIBETH Y. OCHAVEZ', 'lilibethochavez_2025', '$2y$10$D7ROMjSZSd4NsAYpD8RGhO2pp.6dI7LJjrWUYlshiMsBq.Z0FLg/O', '', '09090117541', 81, '7', '', 'lilibethochavez_2025'),
-(129, 'ELAINE L. BRACAMONTE', 'elainebracamonte_2025', '$2y$10$Py1BiNRUt7B1lvAOyr6/VuDFTAGbK/xJjERm73Zw0/FsJlbobKyj.', '', '09487917181', 80, '2', '', 'elainebracamonte_2025'),
-(130, 'DEPUTY SIPLAS', 'deputysiplas2024', '$2y$10$sS15L9o43.xLRLd.IzNgzuZ5piWW6f2GJGLr/FtLqCBVzjb1.ZcYe', '', '00000000000', 77, '8', '', 'deputysiplas2024');
+INSERT INTO `denr_users` (`user_id`, `name`, `username`, `password`, `usertype`, `contact_no`, `office_id`, `role_id`, `user_role_id`, `uploadSignature`, `unhashPassword`) VALUES
+(14, 'Jobert Awa', 'jawa999', '$2y$10$FQdXNDtD2PX.Yno7GSUNue1k985LYiHrOZW7inzbdeq9yX.PfbfGC', '', '09988816379', 9, 15, '15', '', ''),
+(15, 'ANITA E. TEJERO', 'anitatejero2024', '$2y$10$iJFtdDrAkwaEPeYoR6eYhe22lEeOfNd8sXlGh0wLzAZgM47y6Jd1S', '', '09701632535', 70, NULL, '1', 'uploads/TEJERO, ANITA ESPARES.png', 'anitatejero2024'),
+(16, 'MARITES C. ORCULLO', 'maritesorcullo2024', '$2y$10$/5zYCYwEJnX/AuxoEk49DeetxGPs7EUyCjKFkqS/2IukAMffHByRK', '', '09123456789', 69, NULL, '7', 'uploads/ORCULLO, MARITES CAJUTOC.png', 'maritesorcullo2024'),
+(17, 'Bernardina P. Moreno', 'bernardina.m2024', '$2y$10$kjAPgKxwl/SLD2bdeq87zO/qxTlURDDRen95BQSruGDKmlfS81OhS', '', '09123456789', 71, NULL, '2', '', 'bernardina.m2024'),
+(18, 'Joseph E. Langanlangan', 'joseph.la2024', '$2y$10$XKm1UxGF7E6Ka4kCrMXwOOD7eAGPdJSvFyzE9aTzUscVN910Q42He', '', '09484220749', 67, NULL, '9', 'uploads/QoxJ_WZ8.png', 'joseph.la2024'),
+(19, 'EDWIN S. ROQUILLO', 'edwinroquillo2024', '$2y$10$fMEAM59ftX1SFW2dFy5OI.NCf5BM9eHl4cJlnOw5bLcM8VhdGNhZK', '', '09213467595', 68, NULL, '8', 'uploads/DMO IV.png', 'edwinroquillo2024'),
+(20, 'Feny Anthonie V. Catalan', 'fcatalan', '$2y$10$TVGNItxEs9m7aUEyyyvFDuA8ihV5ZLitUe549wA6r5rF2mYiFPNtK', '', '09123456789', 18, NULL, '1', '', ''),
+(25, 'Roel Jumawid', 'rjumawid', '$2y$10$ykBZaTjjdoTVG6KcGUyhV.QInXCXoZOaV4l0Nu0u0Rha50kxiWDNG', '', '09123456789', 13, NULL, '1', '', ''),
+(26, 'Sidney G. Kalinawan', 'skalinawan', '$2y$10$.kXAB/0m.MsFue53Phv.fOb3Yb7LFSDGL7yho.nF9dyF/C9FhDZ8q', '', '09123456789', 12, NULL, '3', '', ''),
+(29, 'ANTHONIE FENY', 'jawa999s', '$2y$10$UHLTUFRP7Xdd1qWoFgq0Ve9zo0MMRdrs9GF5gocpRGdGikp3G.7dK', '', '09329342620', 6, 15, 'Admin', '', ''),
+(30, 'Rodulfo T. Asperin, Jr.', 'rodulfo.jr2024', '$2y$10$44yD2C/ifAUs7AEzia/Dme8/y6fgW.jfWczwYFBSw9rqTIqZMMz16', '', '09090671159', 56, NULL, '9.1', 'uploads/Aspiren R..png', 'rodulfo.jr2024'),
+(31, 'Ramonito P. Lagahit', 'ramonito.lagahit2024', '$2y$10$OIgDqlQ.X1AF460UTxgHM.XOsFyJVg.cr04r8Uqn3SLLpl1nfFsTe', '', '09462459122', 55, NULL, '10', 'uploads/Lagahit, R..png', 'ramonito.lagahit2024'),
+(32, 'Joseph Angelus F. Palomar', 'joseph.palomar2024', '$2y$10$iU81z0QciTAz3cicGK9ks.qruW2zBKlWyqp9zCt5Zclv1/zmE2YVy', '', '09225404497', 54, NULL, '11', 'uploads/Palomar J..png', 'joseph.palomar2024'),
+(33, 'Adelfo R. Luengas, Jr.', 'adelfo.jr2024', '$2y$10$kXqWw3DdMzYV9RYs6saBH.lDuapLatKbSTfWWUPI0D9rk5KAI0.fC', '', '09465868939', 53, NULL, '12', 'uploads/1775395948_Seal_of_the_Department_of_Environment_and_Natural_Resources.svg.png', 'adelfo.jr2024'),
+(34, 'Gande D. Bagot', 'bagot2021', '$2y$10$oJPTaz5hSvvzfpmtoHySruorDMavh2y3fefzeRc/vJNj4126Hs1O2', '', '09329342620', 5, NULL, '17', '', ''),
+(36, 'Roel A. Rosales', 'roelrosales2025', '$2y$10$ea9Fov29MD8dXMGYOugudODIjlnTJNcqE6Pktwyq2MtTiEvDFxRhy', '', '09329342620', 4, NULL, '13', '', 'roelrosales2025'),
+(37, 'MILA J. GARCIA', 'garcia2021', '$2y$10$PM4H4uz.Drf1Dhp4YJEQ0OFqdBuT08Vhjvd9TaqEsijmvOw33lQou', '', '09329342620', 3, NULL, '14', '', ''),
+(38, 'REDEMTOR A. OJA', 'redemtoroja2325', '$2y$10$nf7dR5GBqLcPmrLfrmgdtOKVQ7k0mZpbOuBCJPPfKtkFRYODx/pnu', '', '09329342620', 2, NULL, '15', '', 'redemtoroja2325'),
+(39, 'MARITES M. OCAMPO', 'ocampored.21', '$2y$10$3wmoof/ql17aLsuW6rNSNup7I2lwsEhnl0cVoptkPhBIKJ1dJas/6', '', '09329342620', 1, NULL, '16', '', 'ocampored.21'),
+(47, 'CATALAN, ANTHONIE FENY V.', 'feny8858', '$2y$10$SfdnuqfiMopF9DdbKqfp9.akcgKuXeX/Ca4ArzHb.lL0dIS10MFMW', '', '09329342620', 18, NULL, '0', '', ''),
+(51, 'AFE AFE', 'feny99', '$2y$10$2Tf63KcieD7ishRdKm1rAOdyQuKBcp/6QS9.tUeyPLoy10lHkl8d6', '', '09101761895', 9, NULL, '0', '', ''),
+(53, 'JANICE L. SEMBRANO', 'janice895', '$2y$10$WPWy0ligX3YuAMXhxURjCuczlkCIUWs00wx2K1BxJNUXwk4fW0cZ.', '', '09101761895', 15, NULL, '1', 'uploads/20210728-00400002g.jpg', ''),
+(54, 'JAYKIEL D. MERCADO', 'jaykiel.me2024', '$2y$10$EwNmOvXaT7pJLArTo6QMJ.ivoGj/..boMBEZutvnqcw/HRBeYyIyO', '', '09105597356', 62, NULL, '1', 'uploads/Jered Ravelo.png', 'jaykiel.me2024'),
+(55, 'SHEKAINAH R. BULALA', 'bulala2024_pms', '$2y$10$g4D87S7bibFT/OPkwKk5Nukvjz4nNye1h9GuSAdGA102/e8d1Ychy', '', '09303458701', 62, NULL, '2', 'uploads/Shekinah Rojo-Bulala.png', 'bulala2024_pms'),
+(56, 'MA. TERESITA G. BUENA', 'ma.buena2024', '$2y$10$o8KOD8TwODmYrglZRB.9.ul/pTdHh0LPqBTPpKDwWr4jrVV/Vuz0a', '', '09260053336', 62, NULL, '7', 'uploads/Ma. Teresita Buena.png', 'ma.buena2024'),
+(57, 'CHARLES O. SULLANO', 'sullano2024_pms', '$2y$10$G0G8XfyRPU3RvmPS76M5V.ez74Ptg3Y6XbJBnoTLcBmf7tBH6newa', '', '09207235676', 62, NULL, '8', 'uploads/Charles Sullano.png', 'sullano2024_pms'),
+(58, 'GAY P. RESULLAR', 'resullar2024_pms', '$2y$10$tBxLGdotyrS7HutsB1N1e.H3uMRW3VP0pERvdx.bBpbgT4xQhEyaG', '', '09123316413', 62, NULL, '9', 'uploads/Gay P. Resullar.png', 'resullar2024_pms'),
+(59, 'ADELAIDA R. BORJA', 'adelaidaborja_25', '$2y$10$kLlXeuQXar6iKaQnJvthT.yecoYxtTDF0tkVg/ztU7WxgLOpAcU0m', '', '', 6, NULL, '12', 'uploads/1775395842_Seal_of_the_Department_of_Environment_and_Natural_Resources.svg.png', 'adelaidaborja_25'),
+(60, 'FE C. DACUMOS', 'fedacumos2024', '$2y$10$pSh0lhpqTgVYuLFUP1yl5ub0W18fML1KYjti7LIESTDI2y9XKflqO', '', '', 6, NULL, '11', 'uploads/DacumosFe.jpg', 'fedacumos2024'),
+(61, 'MITZI DUMALE', 'mitzidumale2024', '$2y$10$KX54Hbaqztmgfe8u0aZZYuDi.eOLBSJ8ZYt6mVw37TxIP2un9FqdW', '', '', 6, NULL, '10', 'uploads/DumaleMitzi.jpg', 'mitzidumale2024'),
+(62, 'DAYLINDA DOLONG', 'daylindadolong2024', '$2y$10$mGyNFg37yWuMAgBagl.PJeNFOzkkUVAZi4cE/zLO2j5EIg3FrO0Fa', '', '', 6, NULL, '9.1', 'uploads/DolongDaylinda.jpg', 'daylindadolong2024'),
+(63, 'HERNAN P. RAMIREZ', 'hernanramirez2024', '$2y$10$Mj/XTIbXEG.bV7GViu1uZuwN6oJb7.QAMTRzX/VC0fVcWS2pMUks.', '', '09185244819', 15, NULL, '9', 'uploads/CENRO RAMIREZ.png', 'hernanramirez2024'),
+(64, 'ANIANA J. RADAZA', 'anianaradaza2024', '$2y$10$/gXub71pR5Ul.uyoK/m2zu3IostXRIguKbrxQd.LMrmWdCvQmgY/G', '', '09380341225', 15, NULL, '8', '', 'anianaradaza2024'),
+(65, 'ANGEL E. CONSTANTINO', 'angelconstantino2024', '$2y$10$w7Qc8UtsaBUhvZK2.q3JouLanE1a1Fzyk188XbO4w3aZsA2OaBhmq', '', '09382425444', 15, NULL, '7', 'uploads/A.CONSTANTINO1.png', 'angelconstantino2024'),
+(66, 'SWANNIE MAY O. MARTIRIZAR', 'swanniemartirizar2024', '$2y$10$bbyBdy6ERp7XMteONf9RH.XKT16SCAWscdTMg9iTkQv7RRVqCgO5m', '', '09394467760', 15, NULL, '2', 'uploads/1775396216_Seal_of_the_Department_of_Environment_and_Natural_Resources.svg.png', 'swanniemartirizar2024'),
+(67, 'HANTEL NICHOLAS', 'hantelnicholas2024', '$2y$10$8VuaALPHBW90XzeDvAN4jugv0oXqRfWxFzYNxq2iMfhyHGipviM5O', '', '09168249250', 15, NULL, '1', 'uploads/H.NICOLAS1.jpg', 'hantelnicholas2024'),
+(68, 'RIGIL A. RUALES', 'rigilruales2024', '$2y$10$5dGH5P1MPzb9PB5//fsuX.2kCGbgHFNmx40fOZt7rMN.71OLZTtcm', '', '09461842952', 72, NULL, '1', 'uploads/Signature PDI_rigil.jpg', 'rigilruales2024'),
+(69, 'CRISLEY J. SAPID', 'crisleysapid2024', '$2y$10$a8DBmJeTx4oZG.XHVAlItOCU/0Nbw05fNfLiH0q44SfFtNRuWP8IO', '', '09630593929', 72, NULL, '7', 'uploads/Signature PDI_crisleySapid.jpg', 'crisleysapid2024'),
+(70, 'GEOFFREY Y. PADULLION', 'geoffreypadullion2024', '$2y$10$Wb9.0bwAM7.tZGVp1O3.CuIp3W1sXGFdVGTo0slOVUClKBw.CPGky', '', '09165926145', 72, NULL, '8', 'uploads/Signature PDI_padullon.jpg', 'geoffreypadullion2024'),
+(71, 'NATHANIEL E. RACHO', 'nathanielracho2024_1', '$2y$10$X3Oj9LEuPuJHYcZRTlNwX.dgk1mthqdtzeuPBOk65cjN1oAw9FyM.', '', '09995969139', 72, NULL, '9', 'uploads/penro esig.png', 'nathanielracho2024_1'),
+(72, 'GERALDINE  C. LUMBAY', 'lumbay_c2024', '$2y$10$0wt8NG0CpT1woy/8zDS0xeOwUvvaG7dBiw5/AnvIjI9Fw/d62dKLa', '', '09102787601', 20, NULL, '9.1', 'uploads/LUMBAY, GERALDINE C..jpg', 'lumbay_c2024'),
+(73, 'ISIDRO U. ARMENDAREZ', 'armendarez_u2024', '$2y$10$4ddJb.Bz1E9jPxl.fWkefuNBb4gr6eFnD/y0qxGXH/sak1UtAbBBu', '', '09102797601', 20, NULL, '10', 'uploads/ARMENDAREZ, ISIDRO U.jpg', 'armendarez_u2024'),
+(74, 'EDDIE G. DUHAYLUNGSOD', 'duhaylungsod_g2024', '$2y$10$O5ubjQSCfhxWFQc61ius/Ou1zAJ.FG0xpXRg1eE8u7JUoVj2cPiNO', '', '09639713795', 20, NULL, '11', '', 'duhaylungsod_g2024'),
+(75, 'NORMAN A. ASUGAN', 'asugan_a2024', '$2y$10$8Wdsb72i86U/FqlI3AbnEeuC/8dEjxHEY3y/lMFp85/QQOL1L2ise', '', '09192428046', 20, NULL, '12', 'uploads/DUHAYLUNGSOD, EDDIE G..png', 'asugan_a2024'),
+(76, 'REX C. PLAZA', 'rexplaza2024', '$2y$10$7qMvtobN3Xu64XLqOmXaMenCg0HOQhj1Dc09K.vRkFFZdM1pbxPDu', '', '', 34, NULL, '1', 'uploads/bardon.jpg', 'rexplaza2024'),
+(77, 'JONA E. PONGASE', 'pongase_j2024', '$2y$10$GH1b3IxVw6TkqA0zYZ10aOcoXtO4ViahV6h7Qe0iSeAjXA5oaS0tW', '', '09461482428', 34, NULL, '2', 'uploads/pongase.jpg', 'pongase_j2024'),
+(78, 'EDGAR S. PICUT', 'edgarpicut2024', '$2y$10$bslHH6NnSXdefvyoylGX8OpgfD6LQlEsU0c8WMP6.TzZjfx838Vxa', '', '09102282333', 34, NULL, '7', 'uploads/Plaza.jpg', 'edgarpicut2024'),
+(79, 'EDGAR S. PICUT', 'picut_e2024', '$2y$10$bi3w54Cro6v1Na3D6rIDPeYRHcf42oz1/1HbVta80S1pU4AXnU5hK', '', '09081820189', 34, NULL, '8', 'uploads/picut.jpg', 'picut_e2024'),
+(80, 'RACELYN A. ARGOSINO', 'argosino_r2024', '$2y$10$Bo61kb9at/U5CQ9BCGFDoO9cPTGIbEXcLrLmrAyAwllJyj1ux.4bW', '', '', 34, NULL, '9', 'uploads/Argosino.jpg', 'argosino_r2024'),
+(81, 'JAY M. VILLEGAS', 'jay.vi2024', '$2y$10$jkY1dOFpQgjngUSQAGtJ3Ol75l0JbDJTqmv46TEpRe3bu.Zmxh.H.', '', '09454514674', 57, NULL, '1', 'uploads/VILLEGAS J..png', 'jay.vi2024'),
+(82, 'Glyn Manlino', 'glyn.ma2024', '$2y$10$YMfFHciT0PzYmWS9ewHvZuvOwrY3fag6txYO1bytR9D3pzFxWjTDW', '', '09485750044', 57, NULL, '2', 'uploads/MANLINO.png', 'glyn.ma2024'),
+(83, 'MAMERTO V. VALBARES', 'valbares_v2024', '$2y$10$Wdnb3IU/PcHulXaa3/7eo.o./7qyP18UWP2Bdbzf5bwT1jtDA2uw6', '', '09109694442', 57, NULL, '7', 'uploads/chief RPS Deputy CENRO.png', 'valbares_v2024'),
+(84, 'MAMERTO V. VALBARES', 'valbares_vm2024', '$2y$10$XOElWxqqWiRj3HSEjA68i.bC1J2V09dmawzH7.ayhenMo0UJEuVUq', '', '09109694442', 57, NULL, '8', 'uploads/chief RPS Deputy CENRO.png', 'valbares_vm2024'),
+(85, 'NATHANIEL E. RACHO', 'racho_nl2024', '$2y$10$E5w15jCoR6/zdNf8Wm9BNOycWnJKUPIicRMoeGAF9eM4Jm5uz20v.', '', '09091758962', 57, NULL, '9', 'uploads/cenro e-sig.png', 'racho_nl2024'),
+(86, 'IAN Al JASON ALBERCA', 'ianalberca2024', '$2y$10$BjXjpyedL5n570ttSYsJ4ecTGu/wTkqIdAbF4Bx/jQDWbCl0D8p5e', '', '09074011690', 10, NULL, '1', 'uploads/IAN_JASON_ALBERCA SIGNATURE.png', 'ianalberca2024'),
+(87, 'JANITH M. JUMAWID', 'janith.ju2025', '$2y$10$VHSrosz8LTaRr2RBRWXBcOwwnzuLxWimZ4EjhRH9I4CvFwPsoQTPi', '', '09560559213', 10, NULL, '2', 'uploads/JOAN P. DAGUPLO SIGNATURE.png', 'janith.ju2025'),
+(88, 'MICHAEL A. MORENO', 'michaelmoreno2024', '$2y$10$oHTZoAarNZUz59jj6h/9ru9khBuBu.UcHCgjnAODjFme07JQsklMK', '', '09995956295', 10, NULL, '8', 'uploads/MICHAEL A. MORENO SIGNATURE.png', 'michaelmoreno2024'),
+(89, 'VICTOR M.MAESTRE', 'victorm.maestre', '$2y$10$XZUJMdHWB4amVbw4oKG3ZOKMySbsqnxT9Napr6DPxvWvZP0g1BHb.', '', '09092835447', 10, NULL, '7', 'uploads/MERLYNA Y.OCAYA_SIGNATURE-.png', 'victorm.maestre'),
+(90, 'NELSON B. CARANZO', 'nelsoncaranzo2024', '$2y$10$jN4J7L/IY.z9J9J6tl9JTON2YnioYAsjLcwO5.7n6pXoOoL5OJpcC', '', '09192963553', 10, NULL, '9', 'uploads/NELSON B.CARANZO SIGNATURE.png', 'nelsoncaranzo2024'),
+(91, 'IRENE D. YBAÑEZ', 'irenebanes_2024', '$2y$10$LaxHXnJZwuDnNUGk2tT66O951hHmTHq6Ho9DJVfp6gFiT7hbGVX0i', '', '09466230583', 39, NULL, '1', 'uploads/Irene D. Ybañez.png', 'irenebanes_2024'),
+(92, 'AL S. CANDIDO', 'candido_2024', '$2y$10$xOjpssy9TQIDGUt94VCJ8OMiYddV2Rf1vHp8xIc2MoyqzlhCsAzEa', '', '09510498712', 39, NULL, '2', 'uploads/4 BILL COLLECTOR AL S. CANDIDO.png', 'candido_2024'),
+(93, 'JOLITO A. PABELLAN', 'jolitopabellan2024', '$2y$10$mdLhMbP7Ya3sfUa3cxIKh.bJ5iNnLvc7seIYl9LMSLTjLUFIB5jYW', '', '09635706933', 39, NULL, '7', 'uploads/3 RPS JOLITO A. PABELLAN.png', 'jolitopabellan2024'),
+(94, 'GILBERT R. DRAGAS', 'dragas_2024', '$2y$10$XGdy6ttlE9dQQEkRLohEPeirbfdIWiie3GDTNhtJkDaJZFxfQhyfq', '', '09196051370', 39, NULL, '8', 'uploads/2 DMO IV GILBERT R. DRAGAS.png', 'dragas_2024'),
+(95, 'VINCE A. ESTOPITO', 'estopito_2024', '$2y$10$z.f9WK7OWs.cY5cPsfNWnuHeyPP8UaYdjJ5nsnmK5RV65IsKKmbwe', '', '09092873336', 39, NULL, '9', 'uploads/1 CENRO VINCE A. ESTOPITO.png', 'estopito_2024'),
+(96, 'JEMELITO A. MORALA', 'morala_2025', '$2y$10$6ikoafCQfOm1HPTgssA3F.tEheadYNZvYbc/xWflefVVo0aGVoNyG', '', '09300096954', 29, NULL, '1', 'uploads/LADRONA ROSANNA.png', 'morala_2025'),
+(97, 'LUCY U. MANCO', 'manco_2024', '$2y$10$gALDHPM0Db1xnsSinsw92ukgDhmfSqdqlKHhAqML5A9ohlMWgGe2a', '', '00000000', 29, NULL, '2', '', 'manco_2024'),
+(98, 'ELIZABETH E. DOLIGUEZ', 'doliguez_2024', '$2y$10$7MICr35EKifMHV3cV8AKCeeoC9y6IwLc4o3H8ApjM7tTCCR5JHCLq', '', '00000000000', 29, NULL, '7', 'uploads/doliguez.png', 'doliguez_2024'),
+(99, 'JOCELYN B. JANDAYAN', 'jcjandayan_2024', '$2y$10$1Y6e9ycgR/BiRHdZQhIXq.vXc84fiWBe62D3e3GjbbaFucdrE6Do.', '', '09398967501', 29, NULL, '8', 'uploads/Jandayan Jocelyn.png', 'jcjandayan_2024'),
+(100, 'JEROME H. ALBIA', 'albia_2024', '$2y$10$NfKktYzpePd1BWrU/jatjevrHB3onCPyfHIwgp2jAkyC4TuMrAW/y', '', '09995313045', 29, NULL, '9', 'uploads/albia jerome 2.png', 'albia_2024'),
+(101, 'JERWIN T. RESOLA', 'jerwin.r2024', '$2y$10$bqnQPntmIrx/Bus50XJNKeIal1.F0souMeUT2/KzRcEsP4nLYjJVS', '', '09306164246', 48, NULL, '1', 'uploads/JERWIN T. RESOLA - CHIEF RPS_ CHIEF FUU.png', 'jerwin.r2024'),
+(102, 'GLADYS JISA E. RUPEREZ', 'gladysruperez2024', '$2y$10$76jYWhdxKf3cesJN4hTzwe.fQSK/daw/SBNarKkaZI4uC5NP8zIbu', '', '09487917181', 48, NULL, '2', 'uploads/GLADYS JISA E. RUPEREZ - AAVI_ BILL COLLECTOR.png', 'gladysruperez2024'),
+(103, 'JERWIN T. RESOLA', 'jerwin.re_2024', '$2y$10$kCEP0a8e/oJT4h8ORTVGje1.w5eZt9MwFTKAjrvXvzQ6HmudHBiVy', '', '09306164246', 48, NULL, '7', 'uploads/JERWIN T. RESOLA - CHIEF RPS_ CHIEF FUU.png', 'jerwin.re_2024'),
+(104, 'FREDERICK S. LAPITAN', 'frederick.l2024', '$2y$10$TVTNEPE0WfzZ5.g/fdNSaOU2dFYtmSyNkCY/umV5iw1IyrweWmeDu', '', '09100916703', 48, NULL, '8', 'uploads/FREDERICK S. LAPITAN - DMO III_ DEPUTY CENRO.png', 'frederick.l2024'),
+(105, 'RUEL E. EFREN', 'ruelefren2024', '$2y$10$Ojz17Pur6MWq66wmfId5fO/sBeAvX9bEdW2JDzLK0HSn49tNUhhK2', '', '09299741629', 48, NULL, '5', 'uploads/RUEL E. EFREN - CENRO OFFICER.png', 'ruelefren2024'),
+(106, 'ANA MARIA C. GUNAY', 'ana.gunay2024', '$2y$10$ddasxOvmjsw9ocsPSMzMLuXl.oe74XdqR5ombtyXuw6Q31KEqNFcC', '', '09121591468', 24, NULL, '7', 'uploads/Ana Maria C. Gunay.jpg', 'ana.gunay2024'),
+(107, 'Ronijan D. Lagahit', 'lagahit_2024', '$2y$10$i5q9kYCrdY/GHBWgJnvoC.q3LlBaHNKX6d7zaepumkhydpiky79zO', '', '09177052552', 24, NULL, '2', '', 'lagahit_2024'),
+(108, 'Erlin C. Sanchez', 'sanchez_2024', '$2y$10$4mXafkkFf3aCoq.bVgjrUOJibgr7a.9Shj73Q95G8dYTBpCLUNZPq', '', '09106388456', 24, NULL, '8', 'uploads/Erlin C. Sanchez.jpg', 'sanchez_2024'),
+(109, 'SARAH P. PAREJO	', 'sarahparejo25', '$2y$10$RXVqnsIIzdUusosX.ptapuRE/AlOWqHM19OOBQg7/AgewK/sbE1p2', '', '09392152071', 24, NULL, '9', 'uploads/Parejo.jpg', 'sarahparejo25'),
+(110, 'ALILA LEIGH G. PUTANE', 'alilaputane_2025', '$2y$10$LCY0D0qYOP84svLJyjqgUOew9FyeBUZTRYfkwVLly.Q3Z4ZcZ0GJG', '', '09939889712', 24, NULL, '1', 'uploads/Leome Joy S. Magbanua.jpg', 'alilaputane_2025'),
+(111, 'ROSEMARIE P. SALVADOR', 'rose_salvador2024', '$2y$10$N5wr8cxOgRktJMztmU9uK.jyMPrWud6UwBSJBPb6uW7dsL42XN.3K', '', '09079416644', 4, NULL, '12.5', '', ''),
+(112, 'SHIOANN CHRIS B. BRANZUELA', 'shioann_c2021', '$2y$10$Xlwu9qqVBoqbfU/HvM2PKOA9DLvdabPcgeV43MX9nATjJ1oGXeYCu', '', '09486771278', 72, NULL, '2', '', ''),
+(114, 'JUAN SAMPLE', 'juan_sample', '$2y$10$7LP4AdyQo5Co.iDmKZGxIOivu30QHAU0tHQefupXM8o5UOWdVEytC', '', '09486771278', 72, NULL, '1', '', ''),
+(115, 'RIGIL A. RUALES', 'rigilruales2024p', '$2y$10$5r9Q2MVcQTg8z3vpSROZpePT8Jok0um/AhWxjhby9uNKz7CR7I5zi', '', '09486771278', 72, NULL, '9.1', '', ''),
+(116, 'CRISLEY J. SAPID', 'crisleysapid2024p', '$2y$10$wDM1FpWq65pS1bK.TOkfJuiqbXPb03TRXlt6a0Jqh/TOdlW212g1C', '', '09486771278', 72, NULL, '10', '', ''),
+(117, 'GEOFFREY Y. PADULLION', 'geoffreypadullion2024p', '$2y$10$uuCBRpWbnqU6F1qgXxeGNumgytiD7Oxu/kQM.zt5Bbcutq/UkesFW', '', '09165926145', 72, NULL, '11', '', ''),
+(118, 'NATHANIEL E. RACHO', 'nathanielracho2024', '$2y$10$.61qh0ngBxrIHgO7H/VOzOcTgQcduSZwBKiuoerIO4JZvHrUdvMJW', '', '09995969139', 72, NULL, '12', '', 'nathanielracho2024'),
+(119, 'PENRO SDN FUU', 'penro_sdnfuu2025', '$2y$10$UI3uibr66tJS8rR1pKnow.LgGytEVQWQwVeuY/5EW5KDWCh0VegKq', '', '00000000000', 44, NULL, '9.1', '', ''),
+(120, 'PENRO SDN RPS', 'penro_sdnrps2025', '$2y$10$SIamDKVUJWWH9TRCBq9e6e/zOZTlZBaK010z6UxG8tU6rBXayDY12', '', '00000000000', 44, NULL, '10', '', ''),
+(121, 'PENRO SDN TSD', 'penro_sdntsd2025', '$2y$10$dd3Oo9bbff5qbBQ0ki7iX.WFuXxGkdJElYkFehUNePGDXxjiIkoW.', '', '00000000000', 44, NULL, '11', '', ''),
+(123, 'PENRO SDN POFFICER', 'penro_sdnPENRO2025', '$2y$10$QcOTqWlfdsexHckUxX0ZWeSTVU8tbu39Csm1SpRPb4mYfX3SjL92.', '', '00000000000', 44, NULL, '12', '', ''),
+(125, 'MARIA CATHERINE G. YU', 'maria.yu2024', '$2y$10$NhdYpp6InQNkcQg3eSyyQuLdeVHH2yb2X5jw667xjTzyqPVZKNone', '', '09488261775', 1, NULL, '19', '', 'maria.yu2024'),
+(126, 'MARC KAVEN CASTANARES', 'marcka94', '$2y$10$PbTaVkaCW4mHakIHNNz6HutxgJhwmpT6r8cdNZRfSUh31TjxPtwJW', '', '09309415582', 79, NULL, '1', '', 'marcka94'),
+(127, 'MARJU P. DE JESUS', 'marjujesus_2025', '$2y$10$LNJxFMSNsZ.F8pk6HLtR..gw1ur8QHryVBAkhVSRCuMeJ09kZANvS', '', '09468273559', 77, NULL, '9', '', 'marjujesus_2025'),
+(128, 'LILIBETH Y. OCHAVEZ', 'lilibethochavez_2025', '$2y$10$D7ROMjSZSd4NsAYpD8RGhO2pp.6dI7LJjrWUYlshiMsBq.Z0FLg/O', '', '09090117541', 81, NULL, '7', '', 'lilibethochavez_2025'),
+(129, 'ELAINE L. BRACAMONTE', 'elainebracamonte_2025', '$2y$10$Py1BiNRUt7B1lvAOyr6/VuDFTAGbK/xJjERm73Zw0/FsJlbobKyj.', '', '09487917181', 80, NULL, '2', '', 'elainebracamonte_2025'),
+(130, 'DEPUTY SIPLAS', 'deputysiplas2024', '$2y$10$sS15L9o43.xLRLd.IzNgzuZ5piWW6f2GJGLr/FtLqCBVzjb1.ZcYe', '', '00000000000', 77, NULL, '8', '', 'deputysiplas2024');
 
 -- --------------------------------------------------------
 
@@ -1996,7 +2012,8 @@ ALTER TABLE `denr_roles`
 --
 ALTER TABLE `denr_users`
   ADD PRIMARY KEY (`user_id`),
-  ADD KEY `office` (`office_id`);
+  ADD KEY `office` (`office_id`),
+  ADD KEY `fk_user_role` (`role_id`);
 
 --
 -- Indexes for table `muncity`
@@ -2065,7 +2082,7 @@ ALTER TABLE `contact_messages`
 -- AUTO_INCREMENT for table `denr_roles`
 --
 ALTER TABLE `denr_roles`
-  MODIFY `role_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `role_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `denr_users`
@@ -2124,6 +2141,12 @@ ALTER TABLE `user_client`
 --
 ALTER TABLE `brgy`
   ADD CONSTRAINT `brgy_ibfk_1` FOREIGN KEY (`mun_code`) REFERENCES `muncity` (`mun_code`);
+
+--
+-- Constraints for table `denr_users`
+--
+ALTER TABLE `denr_users`
+  ADD CONSTRAINT `fk_user_role` FOREIGN KEY (`role_id`) REFERENCES `denr_roles` (`role_id`) ON DELETE SET NULL ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
