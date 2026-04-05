@@ -58,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_contact'])) {
 
                 $mail = new PHPMailer\PHPMailer\PHPMailer(true);
                 
-                // Server settings (from your send.php)
+                // Server settings
                 $mail->isSMTP();
                 $mail->Host = 'smtp.gmail.com';
                 $mail->SMTPAuth = true;
@@ -84,55 +84,80 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_contact'])) {
                 echo json_encode(['status' => 'success', 'message' => 'Message sent and acknowledgement email delivered!']);
             }
         } catch (Exception $e) {
-            // Catching the error here prevents the "Unexpected token" JSON error
             echo json_encode(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
         }
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Please fill in all fields.']);
     }
-    exit; // Stop further execution to keep JSON clean
+    exit; 
 }
 
 // Handle Account Login Submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_login'])) {
     header('Content-Type: application/json'); // Ensure JSON response
     
-    $email = trim($_POST['email']);
+    // Using $_POST['email'] but treating it as either email or username
+    $login_id = trim($_POST['email']); 
     $password = $_POST['password'];
 
-    if (!empty($email) && !empty($password)) {
+    if (!empty($login_id) && !empty($password)) {
         try {
-            $stmt = $pdo->prepare("SELECT * FROM user_client WHERE email = :email LIMIT 1");
-            $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+            // --- 1. Check if it's a Client User (using email) ---
+            $stmt = $pdo->prepare("SELECT * FROM user_client WHERE email = :login_id LIMIT 1");
+            $stmt->bindParam(':login_id', $login_id, PDO::PARAM_STR);
             $stmt->execute();
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // Check if user exists and verify password hash
             if ($user && password_verify($password, $user['password'])) {
                 
-                // Check if account status is active (Status = 1)
+                // Check if account status is active
                 if ($user['Status'] == 0) {
                     echo json_encode(['status' => 'error', 'message' => 'Your account is not verified yet. Please check your email to verify your account.']);
                     exit;
                 }
 
-                // Create session variables
+                // Create session variables for Client
                 $_SESSION['client_id'] = $user['client_id'];
                 $_SESSION['firstname'] = $user['firstname'];
                 $_SESSION['lastname'] = $user['lastname'];
                 $_SESSION['email'] = $user['email'];
+                $_SESSION['user_type'] = 'client';
                 $_SESSION['logged_in'] = true;
 
-                // Send success response with redirect URL (Change 'dashboard.php' to your actual dashboard page)
-                echo json_encode(['status' => 'success', 'message' => 'Login successful! Redirecting...', 'redirect' => 'dashboard.php']);
-            } else {
-                echo json_encode(['status' => 'error', 'message' => 'Invalid email or password.']);
+                echo json_encode(['status' => 'success', 'message' => 'Client login successful! Redirecting...', 'redirect' => 'dashboard.php']);
+                exit;
             }
+
+            // --- 2. Check if it's a DENR User (using username) ---
+            $stmt2 = $pdo->prepare("SELECT * FROM denr_users WHERE username = :login_id LIMIT 1");
+            $stmt2->bindParam(':login_id', $login_id, PDO::PARAM_STR);
+            $stmt2->execute();
+            $denr_user = $stmt2->fetch(PDO::FETCH_ASSOC);
+
+            if ($denr_user && password_verify($password, $denr_user['password'])) {
+                
+                // Create session variables for DENR Staff
+                $_SESSION['user_id'] = $denr_user['user_id'];
+                $_SESSION['name'] = $denr_user['name'];
+                $_SESSION['username'] = $denr_user['username'];
+                $_SESSION['usertype'] = $denr_user['usertype'];
+                $_SESSION['office_id'] = $denr_user['office_id'];
+                $_SESSION['user_role_id'] = $denr_user['user_role_id'];
+                $_SESSION['user_type'] = 'denr_user';
+                $_SESSION['logged_in'] = true;
+
+                echo json_encode(['status' => 'success', 'message' => 'DENR Staff login successful! Redirecting...', 'redirect' => 'admin_dashboard.php']);
+                exit;
+            }
+
+            // --- 3. If neither matched ---
+            echo json_encode(['status' => 'error', 'message' => 'Invalid email/username or password.']);
+
         } catch (PDOException $e) {
             echo json_encode(['status' => 'error', 'message' => 'Database error occurred.']);
         }
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Please enter both email and password.']);
+        echo json_encode(['status' => 'error', 'message' => 'Please enter both email/username and password.']);
     }
     exit;
 }
@@ -368,13 +393,13 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?= isset($contact_msg) ? $contact_msg : '' ?>
 
             <form id="contactForm" method="POST" action="index.php" class="space-y-4">
-                <input type="hidden" name="submit_contact" value="1"> <input type="text" name="name" required placeholder="Your Name *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                <input type="hidden" name="submit_contact" value="1"> 
+                <input type="text" name="name" required placeholder="Your Name *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
                 <input type="email" name="email" required placeholder="Your Email address *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
                 <input type="text" name="subject" placeholder="Subject" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition">
                 <textarea name="message" required rows="4" placeholder="Message *" class="w-full p-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition"></textarea>
                 <button type="submit" class="w-full md:w-auto bg-blue-600 text-white font-bold px-10 py-4 rounded-xl hover:bg-blue-700 shadow-lg transition">Send Message</button>
             </form>
-
 
             </div>
             <div class="flex flex-col justify-center">
@@ -422,13 +447,14 @@ $requirements = $req_stmt->fetchAll(PDO::FETCH_ASSOC);
                 </button>
             </div>
             <form id="loginForm" method="POST" action="index.php" class="p-8 space-y-6">
-                <input type="hidden" name="submit_login" value="1"> <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
+                <input type="hidden" name="submit_login" value="1"> 
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Email or Username</label>
                     <div class="relative">
-                        <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="email" name="email" required 
+                        <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" name="email" required 
                             class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" 
-                            placeholder="name@email.com">
+                            placeholder="Email Address or Username">
                     </div>
                 </div>
                 <div>
