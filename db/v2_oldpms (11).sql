@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 30, 2026 at 10:19 AM
+-- Generation Time: Apr 05, 2026 at 02:48 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -40,7 +40,8 @@ CREATE TABLE `application_logs` (
 --
 
 INSERT INTO `application_logs` (`log_id`, `app_id`, `action`, `remarks`, `created_at`) VALUES
-(8, 9, 'Application Submitted', 'Application successfully submitted subject for evaluation. Note: Your application will be evaluated. Complete and correct documents will be officially received and processed, while incomplete documents will be returned and end the transaction. You will be notified of the status of your application thru SMS and to your O-LDPMS registered account. For the return application, it is indicated in the notification either lacks requirements or correction of the wrong data entry in the required documents. Upon compliance, you may reapply using the registered O-LDPMS account.', '2026-03-30 07:09:24');
+(8, 9, 'Application Submitted', 'Application successfully submitted subject for evaluation. Note: Your application will be evaluated. Complete and correct documents will be officially received and processed, while incomplete documents will be returned and end the transaction. You will be notified of the status of your application thru SMS and to your O-LDPMS registered account. For the return application, it is indicated in the notification either lacks requirements or correction of the wrong data entry in the required documents. Upon compliance, you may reapply using the registered O-LDPMS account.', '2026-03-30 07:09:24'),
+(9, 10, 'Application Submitted', 'Application successfully submitted subject for evaluation. Note: Your application will be evaluated. Complete and correct documents will be officially received and processed, while incomplete documents will be returned and end the transaction. You will be notified of the status of your application thru SMS and to your O-LDPMS registered account. For the return application, it is indicated in the notification either lacks requirements or correction of the wrong data entry in the required documents. Upon compliance, you may reapply using the registered O-LDPMS account.', '2026-03-30 08:51:40');
 
 -- --------------------------------------------------------
 
@@ -1383,6 +1384,40 @@ INSERT INTO `contact_messages` (`id`, `name`, `email`, `subject`, `message`, `cr
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `denr_roles`
+--
+
+CREATE TABLE `denr_roles` (
+  `role_id` int(11) NOT NULL,
+  `office_level` varchar(50) NOT NULL COMMENT 'CENRO, PENRO, REGIONAL, or ADMIN',
+  `role_name` varchar(100) NOT NULL,
+  `description` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `denr_roles`
+--
+
+INSERT INTO `denr_roles` (`role_id`, `office_level`, `role_name`, `description`) VALUES
+(1, 'CENRO', 'FUU', 'Frontline Utility Unit - CENRO'),
+(2, 'CENRO', 'Bill Collector', 'Bill Collector - CENRO'),
+(3, 'CENRO', 'Chief RPS', 'Chief Regulation and Permitting Section - CENRO'),
+(4, 'CENRO', 'Deputy CENRO', 'Deputy CENR Officer'),
+(5, 'CENRO', 'CENR Officer', 'CENR Officer'),
+(6, 'PENRO', 'FUU', 'Frontline Utility Unit - PENRO'),
+(7, 'PENRO', 'Chief RPS', 'Chief Regulation and Permitting Section - PENRO'),
+(8, 'PENRO', 'TSD', 'Technical Services Division - PENRO'),
+(9, 'PENRO', 'PENR Officer', 'PENR Officer'),
+(10, 'REGIONAL', 'FUS STAFF', 'Forest Utilization Section Staff'),
+(11, 'REGIONAL', 'CHIEF FUS', 'Chief Forest Utilization Section'),
+(12, 'REGIONAL', 'DIVISION CHIEF LPDD', 'Division Chief Licenses, Patents and Deeds Division'),
+(13, 'REGIONAL', 'TS', 'Technical Services'),
+(14, 'REGIONAL', 'RED', 'Regional Executive Director'),
+(15, 'ADMIN', 'System Admin', 'Overall System Administrator');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `denr_users`
 --
 
@@ -1413,7 +1448,7 @@ INSERT INTO `denr_users` (`user_id`, `name`, `username`, `password`, `usertype`,
 (20, 'Feny Anthonie V. Catalan', 'fcatalan', '$2y$10$TVGNItxEs9m7aUEyyyvFDuA8ihV5ZLitUe549wA6r5rF2mYiFPNtK', '', '09123456789', 18, '1', '', ''),
 (25, 'Roel Jumawid', 'rjumawid', '$2y$10$ykBZaTjjdoTVG6KcGUyhV.QInXCXoZOaV4l0Nu0u0Rha50kxiWDNG', '', '09123456789', 13, '1', '', ''),
 (26, 'Sidney G. Kalinawan', 'skalinawan', '$2y$10$.kXAB/0m.MsFue53Phv.fOb3Yb7LFSDGL7yho.nF9dyF/C9FhDZ8q', '', '09123456789', 12, '3', '', ''),
-(29, 'ANTHONIE FENY', 'jawa999s', '$2y$10$UHLTUFRP7Xdd1qWoFgq0Ve9zo0MMRdrs9GF5gocpRGdGikp3G.7dK', '', '09329342620', 6, '2', '', ''),
+(29, 'ANTHONIE FENY', 'jawa999s', '$2y$10$UHLTUFRP7Xdd1qWoFgq0Ve9zo0MMRdrs9GF5gocpRGdGikp3G.7dK', '', '09329342620', 6, 'Admin', '', ''),
 (30, 'Rodulfo T. Asperin, Jr.', 'rodulfo.jr2024', '$2y$10$44yD2C/ifAUs7AEzia/Dme8/y6fgW.jfWczwYFBSw9rqTIqZMMz16', '', '09090671159', 56, '9.1', 'uploads/Aspiren R..png', 'rodulfo.jr2024'),
 (31, 'Ramonito P. Lagahit', 'ramonito.lagahit2024', '$2y$10$OIgDqlQ.X1AF460UTxgHM.XOsFyJVg.cr04r8Uqn3SLLpl1nfFsTe', '', '09462459122', 55, '10', 'uploads/Lagahit, R..png', 'ramonito.lagahit2024'),
 (32, 'Joseph Angelus F. Palomar', 'joseph.palomar2024', '$2y$10$iU81z0QciTAz3cicGK9ks.qruW2zBKlWyqp9zCt5Zclv1/zmE2YVy', '', '09225404497', 54, '11', 'uploads/Palomar J..png', 'joseph.palomar2024'),
@@ -1640,7 +1675,8 @@ INSERT INTO `permit_applications` (`app_id`, `client_id`, `app_type`, `applicant
 (6, 166, 'New', 'Individual', 'LNM LUMBER', '0001545232646143', NULL, '1602', '160211', '160211009', '8606', 'PUROK 1', 'Pending Review', '2026-03-30 12:20:49'),
 (7, 166, 'New', 'Individual', 'LNM LUMBER', '0001545232646143', NULL, '1602', '160212', '160212002', '8611', 'PUROK 1', 'Pending Review', '2026-03-30 12:55:53'),
 (8, 166, 'New', 'Individual', 'LNM LUMBER', '0001545232646143', NULL, '1602', '160206', '160206008', '8609', 'PUROK 1', 'Pending Review', '2026-03-30 13:18:50'),
-(9, 166, 'New', 'Individual', 'LNM LUMBER', '0001545232646143', NULL, '1602', '160201', '160201001', '8601', 'PUROK 1', 'Pending Review', '2026-03-30 15:09:24');
+(9, 166, 'New', 'Individual', 'LNM LUMBER', '0001545232646143', NULL, '1602', '160201', '160201001', '8601', 'PUROK 1', 'Pending Review', '2026-03-30 15:09:24'),
+(10, 166, 'New', 'Individual', 'LNM LUMBER', '0001545232646143', NULL, '1602', '160201', '160201015', '8601', 'PUROK 1', 'Pending Review', '2026-03-30 16:51:40');
 
 -- --------------------------------------------------------
 
@@ -1722,7 +1758,13 @@ INSERT INTO `permit_requirements_files` (`file_id`, `app_id`, `requirement_id`, 
 (67, 9, 4, 'uploads/applications/9_4_0_1774854564.pdf'),
 (68, 9, 5, 'uploads/applications/9_5_0_1774854564.pdf'),
 (69, 9, 6, 'uploads/applications/9_6_0_1774854564.pdf'),
-(70, 9, 7, 'uploads/applications/9_7_0_1774854564.pdf');
+(70, 9, 7, 'uploads/applications/9_7_0_1774854564.pdf'),
+(71, 10, 1, 'uploads/applications/10_1_0_1774860700.pdf'),
+(72, 10, 2, 'uploads/applications/10_2_0_1774860700.pdf'),
+(73, 10, 3, 'uploads/applications/10_3_0_1774860700.pdf'),
+(74, 10, 4, 'uploads/applications/10_4_0_1774860700.pdf'),
+(75, 10, 5, 'uploads/applications/10_5_0_1774860700.pdf'),
+(76, 10, 7, 'uploads/applications/10_7_0_1774860700.pdf');
 
 -- --------------------------------------------------------
 
@@ -1944,6 +1986,12 @@ ALTER TABLE `contact_messages`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `denr_roles`
+--
+ALTER TABLE `denr_roles`
+  ADD PRIMARY KEY (`role_id`);
+
+--
 -- Indexes for table `denr_users`
 --
 ALTER TABLE `denr_users`
@@ -2005,13 +2053,19 @@ ALTER TABLE `user_client`
 -- AUTO_INCREMENT for table `application_logs`
 --
 ALTER TABLE `application_logs`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `contact_messages`
 --
 ALTER TABLE `contact_messages`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+
+--
+-- AUTO_INCREMENT for table `denr_roles`
+--
+ALTER TABLE `denr_roles`
+  MODIFY `role_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `denr_users`
@@ -2035,13 +2089,13 @@ ALTER TABLE `password_resets`
 -- AUTO_INCREMENT for table `permit_applications`
 --
 ALTER TABLE `permit_applications`
-  MODIFY `app_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `app_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `permit_requirements_files`
 --
 ALTER TABLE `permit_requirements_files`
-  MODIFY `file_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=71;
+  MODIFY `file_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
 
 --
 -- AUTO_INCREMENT for table `province`
