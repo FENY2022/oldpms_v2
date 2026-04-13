@@ -70,9 +70,13 @@ $is_admin = in_array($user_role_id, $admin_role_ids);
             <a href="manage_users.php" target="content-frame" onclick="showIframe(this, 'Manage Users');" class="nav-link flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-800 hover:text-white rounded-xl transition">
                 <i class="fas fa-users w-5"></i> Manage Users
             </a>
+            
+            <?php if ($user_role_id === '15' || strtolower($user_role_id) === 'admin'): ?>
             <a href="manage_requirements.php" target="content-frame" onclick="showIframe(this, 'Manage Requirements');" class="nav-link flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-800 hover:text-white rounded-xl transition">
                 <i class="fas fa-list-check w-5"></i> Requirements
             </a>
+            <?php endif; ?>
+            
             <?php endif; ?>
         </nav>
 
