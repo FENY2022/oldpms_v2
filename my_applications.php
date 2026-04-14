@@ -2,6 +2,14 @@
 // Start Session
 session_start();
 
+// Include PHPMailer classes
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require_once 'sendemail/phpmailer/src/Exception.php';
+require_once 'sendemail/phpmailer/src/PHPMailer.php';
+require_once 'sendemail/phpmailer/src/SMTP.php';
+
 // Check if user is logged in
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header("Location: index.php");
@@ -11,88 +19,143 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 require_once 'db.php';
 $client_id = $_SESSION['client_id'];
 
-// --- Handle Re-upload of PDF Files (Multiple Files Support & 3 min Limit) ---
+// --- Handle Form Actions (Re-upload Files or Resubmit Application) ---
 $upload_msg = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'reupload_file') {
-    $req_id = intval($_POST['requirement_id']);
-    $app_id = intval($_POST['app_id']);
 
-    // Security Check: Ensure this app belongs to the logged-in client AND calculate time difference in MySQL directly
-    $verify_stmt = $pdo->prepare("
-        SELECT client_id, TIMESTAMPDIFF(SECOND, date_submitted, NOW()) as seconds_elapsed 
-        FROM permit_applications 
-        WHERE app_id = ?
-    ");
-    $verify_stmt->execute([$app_id]);
-    $app_data = $verify_stmt->fetch(PDO::FETCH_ASSOC);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    
+    // ACTION 1: Re-upload a specific file
+    if ($_POST['action'] === 'reupload_file') {
+        $req_id = intval($_POST['requirement_id']);
+        $app_id = intval($_POST['app_id']);
 
-    if ($app_data && $app_data['client_id'] == $client_id) {
-        
-        // Use the exact seconds elapsed calculated by the database
-        $time_elapsed = (int)$app_data['seconds_elapsed'];
-        
-        if ($time_elapsed <= 180) {
-            if (isset($_FILES['new_files']) && !empty($_FILES['new_files']['name'][0])) {
-                $upload_dir = 'uploads/applications/';
-                if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+        $verify_stmt = $pdo->prepare("
+            SELECT client_id, status, TIMESTAMPDIFF(SECOND, date_submitted, NOW()) as seconds_elapsed 
+            FROM permit_applications 
+            WHERE app_id = ?
+        ");
+        $verify_stmt->execute([$app_id]);
+        $app_data = $verify_stmt->fetch(PDO::FETCH_ASSOC);
 
-                $all_uploaded = true;
-                $file_count = count($_FILES['new_files']['name']);
+        if ($app_data && $app_data['client_id'] == $client_id) {
+            $time_elapsed = (int)$app_data['seconds_elapsed'];
+            $is_returned = ($app_data['status'] === 'Returned');
+            
+            if ($time_elapsed <= 180 || $is_returned) {
+                if (isset($_FILES['new_files']) && !empty($_FILES['new_files']['name'][0])) {
+                    $upload_dir = 'uploads/applications/';
+                    if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
 
-                // Validate all files first before deleting old ones
-                for ($i = 0; $i < $file_count; $i++) {
-                    if ($_FILES['new_files']['error'][$i] == 0) {
-                        $file_ext = strtolower(pathinfo($_FILES['new_files']['name'][$i], PATHINFO_EXTENSION));
-                        if ($file_ext !== 'pdf') {
-                            $all_uploaded = false;
-                            $upload_msg = "Invalid file type detected. Only PDFs are allowed.";
-                            break;
-                        }
-                    }
-                }
+                    $all_uploaded = true;
+                    $file_count = count($_FILES['new_files']['name']);
 
-                if ($all_uploaded) {
-                    // Delete old files for this specific requirement from DB and Server
-                    $old_stmt = $pdo->prepare("SELECT file_id, file_path FROM permit_requirements_files WHERE app_id = ? AND requirement_id = ?");
-                    $old_stmt->execute([$app_id, $req_id]);
-                    $delete_stmt = $pdo->prepare("DELETE FROM permit_requirements_files WHERE file_id = ?");
-                    
-                    while ($old = $old_stmt->fetch(PDO::FETCH_ASSOC)) {
-                        if (file_exists($old['file_path'])) {
-                            unlink($old['file_path']);
-                        }
-                        $delete_stmt->execute([$old['file_id']]);
-                    }
-
-                    // Upload new files and insert to DB
-                    $insert_stmt = $pdo->prepare("INSERT INTO permit_requirements_files (app_id, requirement_id, file_path) VALUES (?, ?, ?)");
                     for ($i = 0; $i < $file_count; $i++) {
                         if ($_FILES['new_files']['error'][$i] == 0) {
-                            $file_tmp = $_FILES['new_files']['tmp_name'][$i];
-                            // Generate safe, unique filename
-                            $new_file_name = $app_id . '_' . $req_id . '_' . $i . '_' . time() . '_' . rand(1000, 9999) . '.pdf';
-                            $destination = $upload_dir . $new_file_name;
-
-                            if (move_uploaded_file($file_tmp, $destination)) {
-                                $insert_stmt->execute([$app_id, $req_id, $destination]);
+                            $file_ext = strtolower(pathinfo($_FILES['new_files']['name'][$i], PATHINFO_EXTENSION));
+                            if (!in_array($file_ext, ['pdf', 'jpg', 'jpeg', 'png'])) {
+                                $all_uploaded = false;
+                                $upload_msg = "Invalid file type detected. Only PDF and images are allowed.";
+                                break;
                             }
                         }
                     }
 
-                    // Insert Audit Trail Log
-                    $log_stmt = $pdo->prepare("INSERT INTO application_logs (app_id, action, remarks) VALUES (?, ?, ?)");
-                    $log_stmt->execute([$app_id, 'Document Updated', "Requirement document(s) were updated/re-uploaded by the applicant."]);
+                    if ($all_uploaded) {
+                        $old_stmt = $pdo->prepare("SELECT file_id, file_path FROM permit_requirements_files WHERE app_id = ? AND requirement_id = ?");
+                        $old_stmt->execute([$app_id, $req_id]);
+                        $delete_stmt = $pdo->prepare("DELETE FROM permit_requirements_files WHERE file_id = ?");
+                        
+                        while ($old = $old_stmt->fetch(PDO::FETCH_ASSOC)) {
+                            if (file_exists($old['file_path'])) {
+                                unlink($old['file_path']);
+                            }
+                            $delete_stmt->execute([$old['file_id']]);
+                        }
 
-                    $upload_msg = "Documents successfully updated!";
+                        $insert_stmt = $pdo->prepare("INSERT INTO permit_requirements_files (app_id, requirement_id, file_path, status, remarks) VALUES (?, ?, ?, 'Pending', NULL)");
+                        for ($i = 0; $i < $file_count; $i++) {
+                            if ($_FILES['new_files']['error'][$i] == 0) {
+                                $file_tmp = $_FILES['new_files']['tmp_name'][$i];
+                                $file_ext = strtolower(pathinfo($_FILES['new_files']['name'][$i], PATHINFO_EXTENSION));
+                                $new_file_name = $app_id . '_' . $req_id . '_' . $i . '_' . time() . '_' . rand(1000, 9999) . '.' . $file_ext;
+                                $destination = $upload_dir . $new_file_name;
+
+                                if (move_uploaded_file($file_tmp, $destination)) {
+                                    $insert_stmt->execute([$app_id, $req_id, $destination]);
+                                }
+                            }
+                        }
+
+                        $log_stmt = $pdo->prepare("INSERT INTO application_logs (app_id, action, remarks) VALUES (?, ?, ?)");
+                        $log_stmt->execute([$app_id, 'Document Updated', "Requirement document(s) were replaced/re-uploaded by the applicant."]);
+
+                        $upload_msg = "Document successfully updated!";
+                    }
+                } else {
+                    $upload_msg = "No files selected.";
                 }
             } else {
-                $upload_msg = "No files selected.";
+                $upload_msg = "Re-upload time limit has expired and application is not currently returned.";
             }
         } else {
-            $upload_msg = "Re-upload time limit (3 minutes) has expired.";
+            $upload_msg = "Error uploading file or permission denied.";
         }
-    } else {
-        $upload_msg = "Error uploading file or permission denied.";
+    } 
+    
+    // ACTION 2: Resubmit the Application entirely
+    elseif ($_POST['action'] === 'resubmit_app') {
+        $app_id = intval($_POST['app_id']);
+        
+        $verify_stmt = $pdo->prepare("SELECT client_id, status FROM permit_applications WHERE app_id = ?");
+        $verify_stmt->execute([$app_id]);
+        $app_data = $verify_stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($app_data && $app_data['client_id'] == $client_id && $app_data['status'] === 'Returned') {
+            // Update application status back to "Under Evaluation"
+            $update_stmt = $pdo->prepare("UPDATE permit_applications SET status = 'Under Evaluation' WHERE app_id = ?");
+            if ($update_stmt->execute([$app_id])) {
+                
+                // Log the action
+                $log_stmt = $pdo->prepare("INSERT INTO application_logs (app_id, action, remarks) VALUES (?, ?, ?)");
+                $log_stmt->execute([$app_id, 'Application Resubmitted', "Applicant fixed incorrect documents and resubmitted the application for review."]);
+                
+                $upload_msg = "Application successfully resubmitted for evaluation!";
+
+                // --- SEND EMAIL NOTIFICATION TO ADMIN ---
+                $admin_email = 'venzonanthonie@gmail.com'; // Note: Adjust this to the official Admin email if needed
+                
+                $mail = new PHPMailer(true);
+                try {
+                    $mail->isSMTP();
+                    $mail->Host = 'smtp.gmail.com';
+                    $mail->SMTPAuth = true;
+                    $mail->Username = 'venzonanthonie@gmail.com'; 
+                    $mail->Password = 'irsw yeav xgqy rmll'; 
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port = 587;
+
+                    $mail->setFrom('venzonanthonie@gmail.com', 'DENR O-LDPMS System'); 
+                    $mail->addAddress($admin_email, 'Admin User'); 
+
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Application Resubmitted (App #' . str_pad($app_id, 5, '0', STR_PAD_LEFT) . ')';
+                    $mail->Body    = "
+                        <div style='font-family: sans-serif; color: #333;'>
+                            <h3>Hello Admin,</h3>
+                            <p>The applicant <strong>" . htmlspecialchars($_SESSION['firstname'] . ' ' . $_SESSION['lastname']) . "</strong> has successfully fixed their documents and resubmitted their permit application <strong>#" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . "</strong>.</p>
+                            <p>The application is now marked as <strong>Under Evaluation</strong>. Please log in to the O-LDPMS Admin Portal to review the updated documents.</p>
+                            <br>
+                            <p>Thank you,<br>DENR O-LDPMS System</p>
+                        </div>
+                    ";
+                    $mail->AltBody = "Hello Admin, \n\nAn applicant has resubmitted their permit application #" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . ". The status is now Under Evaluation. Please log in to review.\n\nThank you,\nDENR O-LDPMS";
+
+                    $mail->send();
+                } catch (Exception $e) {
+                    // Ignore email error so it doesn't break the form submission
+                }
+            }
+        }
     }
 }
 
@@ -141,6 +204,8 @@ if (!empty($applications)) {
             $grouped_files[$file['app_id']][$file['requirement_id']] = [
                 'requirement_id' => $file['requirement_id'],
                 'requirement_name' => $file['requirement_name'],
+                'status' => $file['status'],
+                'remarks' => $file['remarks'],
                 'files' => []
             ];
         }
@@ -211,10 +276,19 @@ if (!empty($applications)) {
     <?php else: ?>
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <?php foreach ($applications as $app): 
-                // We now strictly use the database's elapsed time logic
                 $can_edit = ((int)$app['seconds_elapsed'] <= 180); 
+                
+                // Determine Color badging for status
+                $status_bg = 'bg-gray-100 text-gray-800';
+                if ($app['status'] === 'Returned' || $app['status'] === 'Rejected') {
+                    $status_bg = 'bg-red-100 text-red-800 border border-red-200';
+                } elseif (in_array($app['status'], ['Approved', 'Issued', 'Completed'])) {
+                    $status_bg = 'bg-green-100 text-green-800 border border-green-200';
+                } elseif ($app['status'] === 'Under Evaluation') {
+                    $status_bg = 'bg-blue-100 text-blue-800 border border-blue-200';
+                }
             ?>
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col hover:border-emerald-300 transition-colors">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col hover:border-blue-300 transition-colors <?= $app['status'] === 'Returned' ? 'ring-2 ring-red-400' : '' ?>">
                     <div class="p-6 flex-1">
                         <div class="flex justify-between items-start mb-4">
                             <span class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-800">
@@ -228,15 +302,16 @@ if (!empty($applications)) {
                         <h3 class="text-lg font-bold text-gray-900 leading-tight mb-1"><?= htmlspecialchars($app['business_name']) ?></h3>
                         <p class="text-sm text-gray-500 mb-4"><i class="fas fa-user-tag mr-1"></i> <?= htmlspecialchars($app['applicant_type']) ?></p>
                         
-                        <?php if ($app['app_type'] == 'Renewal' && !empty($app['reference_number'])): ?>
-                            <div class="bg-blue-50 text-blue-800 border border-blue-100 rounded-lg p-3 text-xs mb-4">
-                                <span class="font-bold">Ref No:</span> <?= htmlspecialchars($app['reference_number']) ?>
-                            </div>
-                        <?php endif; ?>
+                        <div class="mb-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold <?= $status_bg ?>">
+                                <i class="fas <?= $app['status'] === 'Returned' ? 'fa-exclamation-circle' : 'fa-info-circle' ?> mr-1"></i> 
+                                <?= htmlspecialchars($app['status']) ?>
+                            </span>
+                        </div>
                     </div>
                     
                     <div class="bg-slate-50 px-6 py-4 border-t border-gray-100 mt-auto">
-                        <button onclick="openDocsModal(<?= $app['app_id'] ?>)" class="w-full bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-100 transition flex items-center justify-center gap-2 mb-2">
+                        <button onclick="openDocsModal(<?= $app['app_id'] ?>)" class="w-full <?= $app['status'] === 'Returned' ? 'bg-red-50 border border-red-200 text-red-700 hover:bg-red-100' : 'bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100' ?> px-4 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 mb-2">
                             <i class="fas fa-file-pdf"></i> View / Edit Documents
                         </button>
 
@@ -253,7 +328,7 @@ if (!empty($applications)) {
                     <?= json_encode($final_files[$app['app_id']] ?? []) ?>
                 </script>
                 <script type="application/json" id="app_meta_<?= $app['app_id'] ?>">
-                    <?= json_encode(['can_edit' => $can_edit]) ?>
+                    <?= json_encode(['can_edit' => $can_edit, 'status' => $app['status']]) ?>
                 </script>
             <?php endforeach; ?>
         </div>
@@ -275,7 +350,7 @@ if (!empty($applications)) {
     </div>
 
     <div id="docsModal" class="fixed inset-0 z-[60] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transition-all transform flex flex-col max-h-[90vh] modal-enter" id="docsModalContent">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden transition-all transform flex flex-col max-h-[90vh] modal-enter" id="docsModalContent">
             <div class="bg-blue-900 p-6 text-white flex justify-between items-center shrink-0">
                 <div>
                     <h3 class="text-xl font-bold">Application Documents</h3>
@@ -284,10 +359,11 @@ if (!empty($applications)) {
                 <button onclick="closeModal('docsModal')" class="hover:bg-blue-800 p-2 h-8 w-8 flex items-center justify-center rounded-full transition"><i class="fas fa-times"></i></button>
             </div>
             <div class="p-6 overflow-y-auto flex-1 bg-slate-50">
-                <p class="text-xs text-gray-500 mb-4 bg-yellow-50 text-yellow-800 border border-yellow-200 p-3 rounded-lg">
-                    <i class="fas fa-info-circle"></i> You can view your submitted documents below. The re-upload window is strictly available for <strong>3 minutes</strong> after submitting your application.
-                </p>
+                
+                <div id="docsAlertContainer"></div>
                 <ul id="docsList" class="space-y-4"></ul>
+                <div id="resubmitContainer"></div>
+
             </div>
         </div>
     </div>
@@ -300,18 +376,32 @@ if (!empty($applications)) {
                 </h3>
                 <button onclick="closeModal('pdfModal')" class="hover:bg-gray-700 bg-gray-800 p-2 h-8 w-8 flex items-center justify-center rounded-full transition"><i class="fas fa-times"></i></button>
             </div>
-            <div class="flex-1 bg-gray-100 relative w-full h-full">
-                <iframe id="pdfIframe" src="" class="w-full h-full border-none"></iframe>
+            <div class="flex-1 bg-gray-100 relative w-full h-full flex justify-center items-center">
+                <iframe id="pdfIframe" src="" class="w-full h-full border-none hidden"></iframe>
+                <img id="imgViewer" src="" class="max-w-full max-h-full object-contain hidden" />
             </div>
         </div>
     </div>
 
     <script>
-        // PDF Viewer Logic
-        function openPdfModal(filePath, title) {
+        // PDF & Image Viewer Logic
+        function openFileViewer(filePath, title) {
             document.getElementById('pdfModalTitle').innerText = title;
-            document.getElementById('pdfIframe').src = filePath + '#toolbar=0'; 
             
+            const ext = filePath.split('.').pop().toLowerCase();
+            const pdfViewer = document.getElementById('pdfIframe');
+            const imgViewer = document.getElementById('imgViewer');
+            
+            if (ext === 'pdf') {
+                imgViewer.classList.add('hidden');
+                pdfViewer.classList.remove('hidden');
+                pdfViewer.src = filePath + '#toolbar=0';
+            } else {
+                pdfViewer.classList.add('hidden');
+                imgViewer.classList.remove('hidden');
+                imgViewer.src = filePath;
+            }
+
             const modal = document.getElementById('pdfModal');
             const content = document.getElementById('pdfModalContent');
             modal.classList.remove('hidden');
@@ -328,56 +418,126 @@ if (!empty($applications)) {
             const metaData = document.getElementById('app_meta_' + appId).textContent;
             const meta = JSON.parse(metaData);
             const canEdit = meta.can_edit;
+            const appStatus = meta.status;
 
             const list = document.getElementById('docsList');
+            const alertContainer = document.getElementById('docsAlertContainer');
+            const resubmitContainer = document.getElementById('resubmitContainer');
+            
             list.innerHTML = '';
+            resubmitContainer.innerHTML = '';
+
+            // Handle Header Alert Message
+            if (appStatus === 'Returned') {
+                alertContainer.innerHTML = `
+                    <div class="mb-4 bg-red-50 text-red-800 border border-red-200 p-4 rounded-xl shadow-sm">
+                        <h4 class="font-bold mb-1"><i class="fas fa-exclamation-triangle"></i> Application Returned</h4>
+                        <p class="text-sm text-red-700">Please review the documents tagged as "Incorrect" below. Re-upload the required files and hit the Resubmit button at the bottom.</p>
+                    </div>
+                `;
+            } else {
+                alertContainer.innerHTML = `
+                    <p class="text-xs text-gray-500 mb-4 bg-yellow-50 text-yellow-800 border border-yellow-200 p-3 rounded-lg">
+                        <i class="fas fa-info-circle"></i> You can view your submitted documents below. The initial re-upload window is strictly available for <strong>3 minutes</strong> after submitting.
+                    </p>
+                `;
+            }
 
             if (files.length === 0) {
                 list.innerHTML = '<li class="text-center p-6 text-gray-500 font-medium">No documents found for this application.</li>';
             } else {
                 files.forEach(reqGroup => {
                     const li = document.createElement('li');
-                    li.className = "bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3 transition hover:border-blue-300";
+                    const isIncorrect = reqGroup.status === 'Incorrect';
                     
-                    // Generate view buttons (triggers Modal) for all files under this requirement
+                    li.className = `p-4 rounded-xl border transition shadow-sm flex flex-col gap-3 
+                        ${isIncorrect ? 'bg-red-50/50 border-red-300' : 'bg-white border-gray-200 hover:border-blue-300'}`;
+                    
+                    // Generate view buttons for all files under this requirement
                     let fileLinks = reqGroup.files.map((f, index) => {
                         const safeTitle = (reqGroup.requirement_name + ' - File ' + (index + 1)).replace(/'/g, "\\'");
                         return `
-                        <button type="button" onclick="openPdfModal('${f.file_path}', '${safeTitle}')" class="text-xs font-bold text-blue-600 hover:text-blue-800 mt-2 mr-2 inline-flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 transition hover:bg-blue-200">
+                        <button type="button" onclick="openFileViewer('${f.file_path}', '${safeTitle}')" class="text-xs font-bold text-blue-600 hover:text-blue-800 mt-2 mr-2 inline-flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 transition hover:bg-blue-200">
                             <i class="fas fa-eye"></i> View File ${index + 1}
                         </button>
                     `}).join('');
 
-                    // Show reupload form if within 3 minutes, else show lock message
-                    let editForm = canEdit ? `
-                        <form method="POST" enctype="multipart/form-data" class="mt-2 pt-3 border-t border-gray-100 flex items-center gap-3">
+                    // Status Badging for Document
+                    let statusBadge = '';
+                    if (reqGroup.status === 'OK') {
+                        statusBadge = '<span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] uppercase tracking-wider font-bold rounded"><i class="fas fa-check-circle mr-1"></i> Verified OK</span>';
+                    } else if (isIncorrect) {
+                        statusBadge = '<span class="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] uppercase tracking-wider font-bold rounded"><i class="fas fa-times-circle mr-1"></i> Incorrect File</span>';
+                    } else {
+                        statusBadge = '<span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] uppercase tracking-wider font-bold rounded"><i class="fas fa-clock mr-1"></i> Pending / Unverified</span>';
+                    }
+
+                    // Admin Remarks Box
+                    let remarkBox = '';
+                    if (isIncorrect && reqGroup.remarks) {
+                        remarkBox = `
+                            <div class="mt-3 p-3 bg-red-100 border border-red-200 rounded text-sm text-red-800 shadow-inner">
+                                <strong class="block text-xs uppercase tracking-wider text-red-600 mb-1"><i class="fas fa-comment-dots"></i> Evaluator Note:</strong>
+                                ${reqGroup.remarks}
+                            </div>
+                        `;
+                    }
+
+                    // Show reupload form if within 3 minutes OR if app is returned and file is NOT explicitly OK
+                    let allowEdit = canEdit || (appStatus === 'Returned' && reqGroup.status !== 'OK');
+                    
+                    let editForm = allowEdit ? `
+                        <form method="POST" enctype="multipart/form-data" class="mt-3 pt-3 border-t border-gray-200 flex items-center gap-3">
                             <input type="hidden" name="action" value="reupload_file">
                             <input type="hidden" name="requirement_id" value="${reqGroup.requirement_id}">
                             <input type="hidden" name="app_id" value="${appId}">
-                            <input type="file" name="new_files[]" accept=".pdf" multiple required class="flex-1 text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer">
+                            <input type="file" name="new_files[]" accept=".pdf,.jpg,.jpeg,.png" multiple required class="flex-1 text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer bg-white border border-gray-300 rounded-lg">
                             <button type="submit" class="bg-gray-800 text-white text-xs px-4 py-2 rounded-lg font-bold hover:bg-gray-900 transition flex items-center gap-1 shrink-0">
-                                <i class="fas fa-upload"></i> Re-upload
+                                <i class="fas fa-upload"></i> Upload Fix
                             </button>
                         </form>
                     ` : `
-                        <div class="mt-1 pt-2 border-t border-gray-100 text-xs text-red-500 italic">
-                            <i class="fas fa-lock mr-1"></i> The 3-minute re-upload window has expired.
+                        <div class="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500 italic">
+                            <i class="fas fa-lock mr-1"></i> Upload locked.
                         </div>
                     `;
 
                     li.innerHTML = `
                         <div class="flex justify-between items-start">
                             <div class="w-full">
-                                <p class="font-bold text-gray-800 text-sm leading-tight">${reqGroup.requirement_name}</p>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <p class="font-bold text-gray-800 text-sm leading-tight">${reqGroup.requirement_name}</p>
+                                    ${statusBadge}
+                                </div>
                                 <div class="flex flex-wrap">
                                     ${fileLinks}
                                 </div>
+                                ${remarkBox}
                             </div>
                         </div>
                         ${editForm}
                     `;
                     list.appendChild(li);
                 });
+            }
+
+            // Resubmit Container Logic
+            if (appStatus === 'Returned') {
+                resubmitContainer.innerHTML = `
+                    <div class="mt-6 border-t border-gray-200 pt-5 flex justify-between items-center bg-gray-50 p-5 rounded-xl shadow-sm">
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-sm">Done fixing everything?</h4>
+                            <p class="text-xs text-gray-500 mt-1">Make sure you uploaded all corrections before resubmitting.</p>
+                        </div>
+                        <form method="POST">
+                            <input type="hidden" name="action" value="resubmit_app">
+                            <input type="hidden" name="app_id" value="${appId}">
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-md flex items-center">
+                                <i class="fas fa-paper-plane mr-2"></i> Resubmit Application
+                            </button>
+                        </form>
+                    </div>
+                `;
             }
 
             const modal = document.getElementById('docsModal');
@@ -437,6 +597,7 @@ if (!empty($applications)) {
                 
                 if (id === 'pdfModal') {
                     document.getElementById('pdfIframe').src = '';
+                    document.getElementById('imgViewer').src = '';
                 }
             }, 200);
         }

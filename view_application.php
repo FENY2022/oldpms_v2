@@ -2,6 +2,14 @@
 session_start();
 require 'db.php'; // Include your database connection
 
+// Include PHPMailer classes
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require 'sendemail/phpmailer/src/Exception.php';
+require 'sendemail/phpmailer/src/PHPMailer.php';
+require 'sendemail/phpmailer/src/SMTP.php';
+
 // PREVENT UNAUTHORIZED ACCESS
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || $_SESSION['user_type'] !== 'denr_user') {
     die("<div style='text-align:center; padding: 20px; font-family: sans-serif; color: red;'>Unauthorized access. Please login.</div>");
@@ -19,16 +27,22 @@ $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "
 $base_url = $protocol . "://" . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['REQUEST_URI']), '/\\') . "/";
 
 // -------------------------------------------------------------------------
-// HANDLE "MARK AS OK" VIA AJAX (No Page Reload)
+// HANDLE "MARK AS OK" OR "INCORRECT" VIA AJAX (No Page Reload)
 // -------------------------------------------------------------------------
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_mark_ok'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_update_file'])) {
     header('Content-Type: application/json');
     $file_id = intval($_POST['file_id']);
+    $new_status = $_POST['status']; // Will be 'OK' or 'Incorrect'
+    $remarks = isset($_POST['remarks']) ? trim($_POST['remarks']) : null;
     
     try {
-        $stmt_doc = $pdo->prepare("UPDATE permit_requirements_files SET status = 'OK' WHERE file_id = :file_id");
-        $stmt_doc->execute([':file_id' => $file_id]);
-        echo json_encode(['success' => true]);
+        $stmt_doc = $pdo->prepare("UPDATE permit_requirements_files SET status = :status, remarks = :remarks WHERE file_id = :file_id");
+        $stmt_doc->execute([
+            ':status' => $new_status, 
+            ':remarks' => $remarks, 
+            ':file_id' => $file_id
+        ]);
+        echo json_encode(['success' => true, 'status' => $new_status, 'remarks' => $remarks]);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
@@ -36,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_mark_ok'])) {
 }
 
 // -------------------------------------------------------------------------
-// HANDLE STATUS UPDATE FORM SUBMISSION
+// HANDLE STATUS UPDATE FORM SUBMISSION (Whole Application)
 // -------------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_application'])) {
     $new_status = $_POST['status'];
@@ -59,12 +73,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_application'])
         ]);
 
         $pdo->commit();
-        $_SESSION['success_msg'] = "Application status successfully updated!";
+        
+        // 3. SEND EMAIL NOTIFICATION TO CLIENT IF "RETURNED"
+        $email_sent = false;
+        if ($new_status === 'Returned') {
+            // Fetch client's email address
+            $stmt_client = $pdo->prepare("
+                SELECT uc.email, uc.firstname, uc.lastname 
+                FROM permit_applications pa 
+                JOIN user_client uc ON pa.client_id = uc.client_id 
+                WHERE pa.app_id = :app_id
+            ");
+            $stmt_client->execute([':app_id' => $app_id]);
+            $client = $stmt_client->fetch(PDO::FETCH_ASSOC);
+
+            if ($client && !empty($client['email'])) {
+                $mail = new PHPMailer(true);
+                try {
+                    // Server settings
+                    $mail->isSMTP();
+                    $mail->Host = 'smtp.gmail.com';
+                    $mail->SMTPAuth = true;
+                    $mail->Username = 'venzonanthonie@gmail.com'; 
+                    $mail->Password = 'irsw yeav xgqy rmll'; 
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port = 587;
+
+                    // Recipients
+                    $mail->setFrom('venzonanthonie@gmail.com', 'DENR O-LDPMS'); 
+                    $mail->addAddress($client['email'], $client['firstname'] . ' ' . $client['lastname']); 
+
+                    // Content
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Application Returned - Action Required (App #' . str_pad($app_id, 5, '0', STR_PAD_LEFT) . ')';
+                    $mail->Body    = "
+                        <div style='font-family: sans-serif; color: #333;'>
+                            <h3>Hello " . htmlspecialchars($client['firstname']) . ",</h3>
+                            <p>Your permit application <strong>#" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . "</strong> has been <strong>Returned</strong> by the evaluating officer.</p>
+                            <div style='background-color: #ffeaea; padding: 15px; border-left: 4px solid #f44336; margin: 20px 0;'>
+                                <strong>Remarks / Required Action:</strong><br/>
+                                " . nl2br(htmlspecialchars($remarks)) . "
+                            </div>
+                            <p>Please log in to your O-LDPMS account to view which specific documents were tagged as incorrect and update your application.</p>
+                            <br>
+                            <p>Thank you,<br>DENR O-LDPMS Team</p>
+                        </div>
+                    ";
+                    $mail->AltBody = "Hello " . $client['firstname'] . ",\n\nYour permit application #" . str_pad($app_id, 5, '0', STR_PAD_LEFT) . " has been Returned by the evaluator.\n\nReason/Remarks:\n" . $remarks . "\n\nPlease log in to your account to fix the application.\n\nThank you,\nDENR O-LDPMS Team";
+
+                    $mail->send();
+                    $email_sent = true;
+                } catch (Exception $e) {
+                    $error_msg = "Application status updated, but email notification could not be sent. Mailer Error: {$mail->ErrorInfo}";
+                }
+            }
+        }
+
+        if (!isset($error_msg)) {
+            if ($new_status === 'Returned' && $email_sent) {
+                $_SESSION['success_msg'] = "Application status updated to 'Returned' and client was notified via email!";
+            } else {
+                $_SESSION['success_msg'] = "Application status successfully updated!";
+            }
+        }
         
         header("Location: view_application.php?id=" . $app_id);
         exit;
     } catch (Exception $e) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         $error_msg = "Failed to update status: " . $e->getMessage();
     }
 }
@@ -212,7 +290,7 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
                         <div class="mb-4">
                             <label class="block text-sm font-bold text-gray-700 mb-2">Remarks / Note to Applicant</label>
                             <textarea name="remarks" rows="4" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-emerald-500 focus:border-emerald-500" placeholder="State reason for return, instructions, or evaluation remarks..."></textarea>
-                            <p class="text-xs text-gray-500 mt-1">This remark will be recorded in the application logs and viewable by the applicant.</p>
+                            <p class="text-xs text-gray-500 mt-1">This remark will be recorded in the application logs and viewable by the applicant. Mark individual incorrect files first before returning the application. <strong>Note: Returning the application will automatically send an email notification to the client.</strong></p>
                         </div>
                         <div class="flex justify-end">
                             <button type="submit" name="update_application" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-lg transition shadow-sm">
@@ -237,15 +315,22 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
                                         <div class="flex-1">
                                             <p id="doc-title-<?php echo $index; ?>" class="text-sm font-semibold text-gray-800 mb-1 leading-tight flex items-center flex-wrap gap-2">
                                                 <?php echo htmlspecialchars($req['requirement_name']); ?>
-                                                <?php if(isset($req['status']) && $req['status'] === 'OK'): ?>
-                                                    <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] uppercase tracking-wider font-bold rounded ok-badge">
-                                                        <i class="fas fa-check-circle mr-1"></i> OK
-                                                    </span>
-                                                <?php endif; ?>
+                                                <span id="doc-badge-<?php echo $index; ?>">
+                                                    <?php if(isset($req['status']) && $req['status'] === 'OK'): ?>
+                                                        <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] uppercase tracking-wider font-bold rounded"><i class="fas fa-check-circle mr-1"></i> OK</span>
+                                                    <?php elseif(isset($req['status']) && $req['status'] === 'Incorrect'): ?>
+                                                        <span class="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] uppercase tracking-wider font-bold rounded"><i class="fas fa-exclamation-circle mr-1"></i> Incorrect File</span>
+                                                    <?php endif; ?>
+                                                </span>
                                             </p>
+                                            
+                                            <p id="doc-remark-<?php echo $index; ?>" class="text-xs text-red-600 italic mt-1 <?php echo empty($req['remarks']) ? 'hidden' : ''; ?>">
+                                                Remark: <?php echo htmlspecialchars($req['remarks'] ?? ''); ?>
+                                            </p>
+
                                             <div class="mt-1.5 flex items-center gap-3">
                                                 <button type="button" onclick="openDocumentModal(<?php echo $index; ?>)" class="inline-flex items-center text-xs font-bold text-emerald-600 hover:text-emerald-800 transition">
-                                                    <i class="fas fa-search-plus mr-1"></i> Preview
+                                                    <i class="fas fa-search-plus mr-1"></i> Preview / Evaluate
                                                 </button>
                                                 <a href="<?php echo $base_url . htmlspecialchars($req['file_path']); ?>" target="_blank" class="inline-flex items-center text-xs font-bold text-blue-600 hover:text-blue-800 transition">
                                                     <i class="fas fa-external-link-alt mr-1"></i> Open Direct
@@ -306,9 +391,8 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
             </div>
             
             <div class="flex-1 bg-gray-200 relative p-4 flex items-center justify-center overflow-auto">
-                <div id="modalAlert" class="hidden absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded shadow-lg font-bold text-sm z-10 transition">
-                    <i class="fas fa-check mr-2"></i> Marked as OK
-                </div>
+                <div id="modalAlert" class="hidden absolute top-4 left-1/2 transform -translate-x-1/2 text-white px-4 py-2 rounded shadow-lg font-bold text-sm z-10 transition">
+                    </div>
                 
                 <iframe id="modalPdfViewer" src="" class="w-full h-full border-0 rounded bg-white shadow-inner hidden"></iframe>
                 <img id="modalImgViewer" src="" alt="Document Preview" class="max-w-full max-h-full object-contain hidden rounded shadow-sm">
@@ -325,12 +409,17 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
                     <i class="fas fa-chevron-left mr-2"></i> Previous
                 </button>
                 
-                <form id="markOkForm" onsubmit="markDocumentOk(event)" class="m-0 flex items-center">
-                    <input type="hidden" name="file_id" id="modalFileId" value="">
-                    <button type="submit" id="markOkBtn" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold transition shadow-sm flex items-center">
+                <div class="flex items-center gap-3">
+                    <input type="hidden" id="modalFileId" value="">
+                    
+                    <button id="markOkBtn" onclick="updateDocumentStatus('OK')" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold transition shadow-sm flex items-center">
                         <i class="fas fa-check-circle mr-2"></i> Mark as OK
                     </button>
-                </form>
+                    
+                    <button id="markIncorrectBtn" onclick="updateDocumentStatus('Incorrect')" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold transition shadow-sm flex items-center">
+                        <i class="fas fa-exclamation-circle mr-2"></i> Mark as Incorrect
+                    </button>
+                </div>
 
                 <button id="nextDocBtn" onclick="nextDocument()" class="px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed">
                     Next <i class="fas fa-chevron-right ml-2"></i>
@@ -358,6 +447,7 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
         const prevBtn = document.getElementById('prevDocBtn');
         const nextBtn = document.getElementById('nextDocBtn');
         const markOkBtn = document.getElementById('markOkBtn');
+        const markIncorrectBtn = document.getElementById('markIncorrectBtn');
         const modalAlert = document.getElementById('modalAlert');
 
         function openDocumentModal(index) {
@@ -409,14 +499,16 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
                 unsupportedViewer.classList.remove('hidden');
             }
 
-            // Set File ID for the "Mark OK" form
+            // Set File ID
             fileIdInput.value = currentDoc.file_id;
 
-            // Handle "Mark OK" button visual state
-            if (currentDoc.status && currentDoc.status === 'OK') {
-                setButtonAsMarked();
+            // Handle Buttons visual state based on current status
+            if (currentDoc.status === 'OK') {
+                setButtonAsMarked('OK');
+            } else if (currentDoc.status === 'Incorrect') {
+                setButtonAsMarked('Incorrect');
             } else {
-                setButtonAsUnmarked();
+                setButtonsAsUnmarked();
             }
 
             // Handle Navigation Buttons Status
@@ -440,32 +532,62 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
             }
         }
 
-        function setButtonAsMarked() {
-            markOkBtn.innerHTML = '<i class="fas fa-check-double mr-2"></i> Already Marked OK';
-            markOkBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
-            markOkBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-            markOkBtn.disabled = true;
+        function setButtonAsMarked(status) {
+            if (status === 'OK') {
+                markOkBtn.innerHTML = '<i class="fas fa-check-double mr-2"></i> Marked OK';
+                markOkBtn.classList.replace('bg-emerald-600', 'bg-gray-400');
+                markOkBtn.classList.replace('hover:bg-emerald-700', 'cursor-not-allowed');
+                markOkBtn.disabled = true;
+
+                markIncorrectBtn.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i> Mark as Incorrect';
+                markIncorrectBtn.classList.replace('bg-gray-400', 'bg-red-600');
+                markIncorrectBtn.classList.replace('cursor-not-allowed', 'hover:bg-red-700');
+                markIncorrectBtn.disabled = false;
+            } else if (status === 'Incorrect') {
+                markIncorrectBtn.innerHTML = '<i class="fas fa-ban mr-2"></i> Marked Incorrect';
+                markIncorrectBtn.classList.replace('bg-red-600', 'bg-gray-400');
+                markIncorrectBtn.classList.replace('hover:bg-red-700', 'cursor-not-allowed');
+                markIncorrectBtn.disabled = true;
+
+                markOkBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Mark as OK';
+                markOkBtn.classList.replace('bg-gray-400', 'bg-emerald-600');
+                markOkBtn.classList.replace('cursor-not-allowed', 'hover:bg-emerald-700');
+                markOkBtn.disabled = false;
+            }
         }
 
-        function setButtonAsUnmarked() {
+        function setButtonsAsUnmarked() {
             markOkBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Mark as OK';
-            markOkBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
-            markOkBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+            markOkBtn.className = 'px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold transition shadow-sm flex items-center';
             markOkBtn.disabled = false;
+
+            markIncorrectBtn.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i> Mark as Incorrect';
+            markIncorrectBtn.className = 'px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold transition shadow-sm flex items-center';
+            markIncorrectBtn.disabled = false;
         }
 
         // Handle Form Submission via AJAX Fetch API
-        async function markDocumentOk(e) {
-            e.preventDefault();
+        async function updateDocumentStatus(status) {
+            let remark = '';
             
+            // Prompt for a reason if indicating a specific file is incorrect
+            if (status === 'Incorrect') {
+                remark = prompt("Please enter a remark explaining why this document is incorrect. \n\nNote: This only tags the file. You must STILL use the main form to 'Return' the application to the client.");
+                if (remark === null) return; // Action cancelled by user
+            }
+
             const formData = new FormData();
-            formData.append('ajax_mark_ok', '1');
+            formData.append('ajax_update_file', '1');
             formData.append('file_id', fileIdInput.value);
+            formData.append('status', status);
+            formData.append('remarks', remark);
 
             try {
-                // Keep the button text as "Saving..."
-                markOkBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
-                markOkBtn.disabled = true;
+                // UI Loading state
+                const btn = status === 'OK' ? markOkBtn : markIncorrectBtn;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+                btn.disabled = true;
 
                 const response = await fetch('', {
                     method: 'POST',
@@ -476,28 +598,54 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
                 
                 if (data.success) {
                     // Update Javascript Object memory
-                    documentsList[currentIndex].status = 'OK';
+                    documentsList[currentIndex].status = status;
+                    documentsList[currentIndex].remarks = remark;
                     
-                    // Update Modal Button View
-                    setButtonAsMarked();
+                    // Update Modal Buttons View
+                    setButtonAsMarked(status);
 
                     // Show success banner temporarily inside modal
+                    if(status === 'OK') {
+                        modalAlert.innerHTML = '<i class="fas fa-check mr-2"></i> Marked as OK';
+                        modalAlert.className = 'absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded shadow-lg font-bold text-sm z-10 transition';
+                    } else {
+                        modalAlert.innerHTML = '<i class="fas fa-info-circle mr-2"></i> Tagged as Incorrect';
+                        modalAlert.className = 'absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded shadow-lg font-bold text-sm z-10 transition';
+                    }
+                    
                     modalAlert.classList.remove('hidden');
                     setTimeout(() => modalAlert.classList.add('hidden'), 3000);
 
                     // Dynamically update the background list item badge
-                    const titleElement = document.getElementById('doc-title-' + currentIndex);
-                    if (titleElement && !titleElement.querySelector('.ok-badge')) {
-                        titleElement.innerHTML += ' <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] uppercase tracking-wider font-bold rounded ok-badge"><i class="fas fa-check-circle mr-1"></i> OK</span>';
+                    const badgeContainer = document.getElementById('doc-badge-' + currentIndex);
+                    if (badgeContainer) {
+                        if(status === 'OK') {
+                            badgeContainer.innerHTML = '<span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] uppercase tracking-wider font-bold rounded"><i class="fas fa-check-circle mr-1"></i> OK</span>';
+                        } else {
+                            badgeContainer.innerHTML = '<span class="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] uppercase tracking-wider font-bold rounded"><i class="fas fa-exclamation-circle mr-1"></i> Incorrect File</span>';
+                        }
+                    }
+
+                    // Dynamically update the remark display in the background list
+                    const remarkContainer = document.getElementById('doc-remark-' + currentIndex);
+                    if (remarkContainer) {
+                        if (status === 'Incorrect' && remark !== '') {
+                            remarkContainer.innerText = 'Remark: ' + remark;
+                            remarkContainer.classList.remove('hidden');
+                        } else {
+                            remarkContainer.classList.add('hidden');
+                            remarkContainer.innerText = '';
+                        }
                     }
                 } else {
-                    alert("Error marking document: " + (data.error || "Unknown Error"));
-                    setButtonAsUnmarked();
+                    alert("Error updating document: " + (data.error || "Unknown Error"));
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
                 }
             } catch (error) {
                 console.error('Error:', error);
                 alert("A connection error occurred. Please try again.");
-                setButtonAsUnmarked();
+                setButtonsAsUnmarked();
             }
         }
     </script>
