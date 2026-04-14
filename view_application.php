@@ -243,7 +243,7 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
                                                 <button type="button" onclick="openDocumentModal(<?php echo $index; ?>)" class="inline-flex items-center text-xs font-bold text-emerald-600 hover:text-emerald-800 transition">
                                                     <i class="fas fa-search-plus mr-1"></i> Preview
                                                 </button>
-                                                <a href="../<?php echo htmlspecialchars($req['file_path']); ?>" target="_blank" class="inline-flex items-center text-xs font-bold text-blue-600 hover:text-blue-800 transition">
+                                                <a href="<?php echo htmlspecialchars($req['file_path']); ?>" target="_blank" class="inline-flex items-center text-xs font-bold text-blue-600 hover:text-blue-800 transition">
                                                     <i class="fas fa-external-link-alt mr-1"></i> Open Direct
                                                 </a>
                                             </div>
@@ -383,9 +383,8 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
             pdfViewer.src = "";
             imgViewer.src = "";
 
-            // ADDING "../" HERE: If your file is inside a folder (e.g., /admin/), 
-            // it steps out to find the "uploads/" folder.
-            const filePath = "../" + currentDoc.file_path;
+            // FIX: Uses exact database path (e.g. 'uploads/applications/file.pdf') without ../
+            const filePath = currentDoc.file_path;
 
             // Display logic based on file extension
             if (filePath) {
