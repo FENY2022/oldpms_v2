@@ -14,6 +14,20 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $app_id = intval($_GET['id']);
 $user_name = $_SESSION['name'] ?? 'System User';
 
+// HANDLE MARK DOCUMENT AS OK
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_doc_ok'])) {
+    $file_id = intval($_POST['file_id']);
+    try {
+        $stmt_doc = $pdo->prepare("UPDATE permit_requirements_files SET status = 'OK' WHERE file_id = :file_id");
+        $stmt_doc->execute([':file_id' => $file_id]);
+        $_SESSION['success_msg'] = "Document successfully marked as OK.";
+        header("Location: view_application.php?id=" . $app_id);
+        exit;
+    } catch (Exception $e) {
+        $error_msg = "Failed to mark document as OK. Please ensure you have added the 'status' column to the permit_requirements_files table in your database.";
+    }
+}
+
 // HANDLE STATUS UPDATE
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_application'])) {
     $new_status = $_POST['status'];
@@ -38,7 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_application'])
         $pdo->commit();
         $_SESSION['success_msg'] = "Application status successfully updated!";
         
-        // Redirect to refresh data and prevent form resubmission
         header("Location: view_application.php?id=" . $app_id);
         exit;
     } catch (Exception $e) {
@@ -97,6 +110,10 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
+        
+        /* Modal Animation */
+        .modal-enter { opacity: 0; transform: scale(0.95); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.2s, transform 0.2s; }
     </style>
 </head>
 <body class="bg-slate-50 p-8">
@@ -120,22 +137,20 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
         </div>
 
         <?php if(isset($_SESSION['success_msg'])): ?>
-            <div class="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center gap-3">
+            <div class="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center gap-3 shadow-sm">
                 <i class="fas fa-check-circle text-lg"></i>
                 <span class="font-semibold"><?php echo $_SESSION['success_msg']; unset($_SESSION['success_msg']); ?></span>
             </div>
         <?php endif; ?>
         <?php if(isset($error_msg)): ?>
-            <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-3">
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-3 shadow-sm">
                 <i class="fas fa-exclamation-triangle text-lg"></i>
                 <span class="font-semibold"><?php echo $error_msg; ?></span>
             </div>
         <?php endif; ?>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
             <div class="lg:col-span-2 space-y-8">
-                
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                         <h3 class="font-bold text-gray-800"><i class="fas fa-info-circle text-emerald-600 mr-2"></i> Application Details</h3>
@@ -198,11 +213,9 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
                         </div>
                     </form>
                 </div>
-
             </div>
 
             <div class="space-y-8">
-                
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                         <h3 class="font-bold text-gray-800"><i class="fas fa-file-pdf text-red-500 mr-2"></i> Submitted Documents</h3>
@@ -210,16 +223,21 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
                     <div class="p-0">
                         <?php if(count($requirements) > 0): ?>
                             <ul class="divide-y divide-gray-100">
-                                <?php foreach($requirements as $req): ?>
+                                <?php foreach($requirements as $index => $req): ?>
                                     <li class="p-4 hover:bg-gray-50 flex items-start gap-3 transition">
-                                        <i class="fas fa-file-alt text-gray-400 mt-1"></i>
+                                        <i class="fas fa-file-alt text-gray-400 mt-1 text-lg"></i>
                                         <div class="flex-1">
-                                            <p class="text-sm font-semibold text-gray-800 mb-1 leading-tight">
+                                            <p class="text-sm font-semibold text-gray-800 mb-1 leading-tight flex items-center flex-wrap gap-2">
                                                 <?php echo htmlspecialchars($req['requirement_name']); ?>
+                                                <?php if(isset($req['status']) && $req['status'] === 'OK'): ?>
+                                                    <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] uppercase tracking-wider font-bold rounded">
+                                                        <i class="fas fa-check-circle mr-1"></i> OK
+                                                    </span>
+                                                <?php endif; ?>
                                             </p>
-                                            <a href="../<?php echo htmlspecialchars($req['file_path']); ?>" target="_blank" class="inline-flex items-center text-xs font-bold text-emerald-600 hover:text-emerald-800 transition">
-                                                <i class="fas fa-external-link-alt mr-1"></i> View Document
-                                            </a>
+                                            <button type="button" onclick="openDocumentModal(<?php echo $index; ?>)" class="inline-flex items-center text-xs font-bold text-emerald-600 hover:text-emerald-800 transition">
+                                                <i class="fas fa-search-plus mr-1"></i> View Document
+                                            </button>
                                         </div>
                                     </li>
                                 <?php endforeach; ?>
@@ -265,5 +283,108 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
             </div>
         </div>
     </div>
+
+    <div id="documentModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-75 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+                <h3 id="modalDocTitle" class="font-bold text-lg text-gray-800">Document Title</h3>
+                <button onclick="closeDocumentModal()" class="text-gray-400 hover:text-red-500 transition focus:outline-none">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 bg-gray-200 relative p-2">
+                <iframe id="modalDocViewer" src="" class="w-full h-full border-0 rounded bg-white shadow-inner"></iframe>
+            </div>
+            
+            <div class="px-6 py-4 border-t flex justify-between items-center bg-white">
+                <button id="prevDocBtn" onclick="prevDocument()" class="px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-chevron-left mr-2"></i> Previous
+                </button>
+                
+                <form method="POST" action="" id="markOkForm" class="m-0 flex items-center">
+                    <input type="hidden" name="file_id" id="modalFileId" value="">
+                    <button type="submit" name="mark_doc_ok" id="markOkBtn" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold transition shadow-sm flex items-center">
+                        <i class="fas fa-check-circle mr-2"></i> Mark as OK
+                    </button>
+                </form>
+
+                <button id="nextDocBtn" onclick="nextDocument()" class="px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Next <i class="fas fa-chevron-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pass PHP array of requirements to Javascript
+        const documentsList = <?php echo json_encode($requirements); ?>;
+        let currentIndex = 0;
+
+        const modal = document.getElementById('documentModal');
+        const viewer = document.getElementById('modalDocViewer');
+        const title = document.getElementById('modalDocTitle');
+        const fileIdInput = document.getElementById('modalFileId');
+        const prevBtn = document.getElementById('prevDocBtn');
+        const nextBtn = document.getElementById('nextDocBtn');
+        const markOkBtn = document.getElementById('markOkBtn');
+
+        function openDocumentModal(index) {
+            currentIndex = index;
+            updateModalContent();
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function closeDocumentModal() {
+            modal.classList.add('hidden');
+            viewer.src = ""; // Clear iframe source
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        }
+
+        function updateModalContent() {
+            if (documentsList.length === 0) return;
+            
+            const currentDoc = documentsList[currentIndex];
+            
+            // Set Header and Source
+            title.innerText = currentDoc.requirement_name;
+            viewer.src = "../" + currentDoc.file_path; // Assuming path relative to parent dir
+            
+            // Set File ID for the "Mark OK" form
+            fileIdInput.value = currentDoc.file_id;
+
+            // Handle "Mark OK" button state visually
+            if (currentDoc.status && currentDoc.status === 'OK') {
+                markOkBtn.innerHTML = '<i class="fas fa-check-double mr-2"></i> Already Marked OK';
+                markOkBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+                markOkBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                markOkBtn.disabled = true;
+            } else {
+                markOkBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Mark as OK';
+                markOkBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+                markOkBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                markOkBtn.disabled = false;
+            }
+
+            // Handle Navigation Buttons Status
+            prevBtn.disabled = (currentIndex === 0);
+            nextBtn.disabled = (currentIndex === (documentsList.length - 1));
+        }
+
+        function nextDocument() {
+            if (currentIndex < documentsList.length - 1) {
+                currentIndex++;
+                updateModalContent();
+            }
+        }
+
+        function prevDocument() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateModalContent();
+            }
+        }
+    </script>
 </body>
 </html>
