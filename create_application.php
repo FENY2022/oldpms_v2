@@ -136,7 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
 
         // --- NEW: Add initial Audit Trail Log ---
         $action = "Application Submitted";
-        $remarks = "Application successfully submitted subject for evaluation. Note: Your application will be evaluated. Complete and correct documents will be officially received and processed, while incomplete documents will be returned and end the transaction. You will be notified of the status of your application thru SMS and to your O-LDPMS registered account. For the return application, it is indicated in the notification either lacks requirements or correction of the wrong data entry in the required documents. Upon compliance, you may reapply using the registered O-LDPMS account.";        $stmtLog = $pdo->prepare("INSERT INTO application_logs (app_id, action, remarks) VALUES (?, ?, ?)");
+        $remarks = "Application successfully submitted subject for evaluation. Note: Your application will be evaluated. Complete and correct documents will be officially received and processed, while incomplete documents will be returned and end the transaction. You will be notified of the status of your application thru SMS and to your O-LDPMS registered account. For the return application, it is indicated in the notification either lacks requirements or correction of the wrong data entry in the required documents. Upon compliance, you may reapply using the registered O-LDPMS account.";        
+        $stmtLog = $pdo->prepare("INSERT INTO application_logs (app_id, action, remarks) VALUES (?, ?, ?)");
         $stmtLog->execute([$new_app_id, $action, $remarks]);
         // ----------------------------------------
 
@@ -465,21 +466,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
                 if (i === currentStep) {
                     stepDiv.classList.remove('hidden');
                     stepDiv.classList.add('block');
-                    // Active style
                     stepperIcon.className = "w-10 h-10 flex items-center justify-center bg-emerald-600 text-white rounded-full font-bold shadow-md transition-colors ring-4 ring-white";
                     stepperIcon.innerHTML = i;
                     stepperText.className = "text-sm font-bold text-emerald-700 mt-2 text-center";
                 } else if (i < currentStep) {
                     stepDiv.classList.remove('block');
                     stepDiv.classList.add('hidden');
-                    // Completed style
                     stepperIcon.className = "w-10 h-10 flex items-center justify-center bg-emerald-100 text-emerald-600 rounded-full font-bold transition-colors ring-4 ring-white";
                     stepperIcon.innerHTML = '<i class="fas fa-check"></i>';
                     stepperText.className = "text-sm font-semibold text-emerald-600 mt-2 text-center";
                 } else {
                     stepDiv.classList.remove('block');
                     stepDiv.classList.add('hidden');
-                    // Pending style
                     stepperIcon.className = "w-10 h-10 flex items-center justify-center bg-gray-200 text-gray-500 rounded-full font-bold transition-colors ring-4 ring-white";
                     stepperIcon.innerHTML = i;
                     stepperText.className = "text-sm font-medium text-gray-400 mt-2 text-center";
@@ -489,11 +487,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
 
         function validateStep(stepIndex) {
             const stepDiv = document.getElementById(`step-${stepIndex}`);
-            // Find all elements that can be validated, excluding disabled ones
             const inputs = stepDiv.querySelectorAll('input:not(:disabled), select:not(:disabled), textarea:not(:disabled)');
             for (let input of inputs) {
                 if (!input.checkValidity()) {
-                    input.reportValidity(); // Triggers the browser's native error tooltip
+                    input.reportValidity();
                     return false;
                 }
             }
@@ -513,7 +510,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
             updateStepper();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-
 
         // ==========================================
         // EXISTING LOGIC 
@@ -613,23 +609,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_application']))
             const listContainer = document.getElementById(textId);
             const containerBox = input.parentElement;
             const icon = containerBox.querySelector('.upload-icon');
+            const maxSizeInBytes = 10 * 1024 * 1024; // 10MB limit per file
 
             if (input.files && input.files.length > 0) {
                 let htmlList = '';
                 let isValid = true;
+                let errorMessage = '';
 
                 for(let i = 0; i < input.files.length; i++) {
-                    const fileName = input.files[i].name;
+                    const file = input.files[i];
+                    const fileName = file.name;
+                    
+                    // Check file type
                     if(!fileName.toLowerCase().endsWith('.pdf')) {
                         isValid = false;
+                        errorMessage = "Please select strictly PDF files only.";
                         break;
                     }
+                    
+                    // Check file size
+                    if(file.size > maxSizeInBytes) {
+                        isValid = false;
+                        errorMessage = `File "${fileName}" exceeds the 10MB limit.`;
+                        break;
+                    }
+                    
                     htmlList += `<div class="truncate bg-emerald-100/50 rounded px-2 py-1"><i class="fas fa-check-circle mr-1"></i> ${fileName}</div>`;
                 }
 
                 if(!isValid) {
-                    showToast("Please select strictly PDF files only.", "error");
-                    input.value = ''; // Reset
+                    showToast(errorMessage, "error");
+                    input.value = ''; // Reset the input
                     listContainer.innerHTML = '';
                     containerBox.classList.remove('border-emerald-500', 'bg-emerald-50');
                     containerBox.classList.add('border-gray-300', 'bg-slate-50');
