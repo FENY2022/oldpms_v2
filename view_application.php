@@ -14,21 +14,26 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $app_id = intval($_GET['id']);
 $user_name = $_SESSION['name'] ?? 'System User';
 
-// HANDLE MARK DOCUMENT AS OK
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_doc_ok'])) {
+// -------------------------------------------------------------------------
+// HANDLE "MARK AS OK" VIA AJAX (No Page Reload)
+// -------------------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_mark_ok'])) {
+    header('Content-Type: application/json');
     $file_id = intval($_POST['file_id']);
+    
     try {
         $stmt_doc = $pdo->prepare("UPDATE permit_requirements_files SET status = 'OK' WHERE file_id = :file_id");
         $stmt_doc->execute([':file_id' => $file_id]);
-        $_SESSION['success_msg'] = "Document successfully marked as OK.";
-        header("Location: view_application.php?id=" . $app_id);
-        exit;
+        echo json_encode(['success' => true]);
     } catch (Exception $e) {
-        $error_msg = "Failed to mark document as OK. Please ensure you have added the 'status' column to the permit_requirements_files table in your database.";
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
+    exit; // Stop execution here for AJAX calls
 }
 
-// HANDLE STATUS UPDATE
+// -------------------------------------------------------------------------
+// HANDLE STATUS UPDATE FORM SUBMISSION
+// -------------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_application'])) {
     $new_status = $_POST['status'];
     $remarks = trim($_POST['remarks']);
@@ -111,9 +116,8 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
         
-        /* Modal Animation */
-        .modal-enter { opacity: 0; transform: scale(0.95); }
-        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.2s, transform 0.2s; }
+        /* Modal Background Scroll Prevention */
+        .modal-active { overflow: hidden; }
     </style>
 </head>
 <body class="bg-slate-50 p-8">
@@ -227,17 +231,22 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
                                     <li class="p-4 hover:bg-gray-50 flex items-start gap-3 transition">
                                         <i class="fas fa-file-alt text-gray-400 mt-1 text-lg"></i>
                                         <div class="flex-1">
-                                            <p class="text-sm font-semibold text-gray-800 mb-1 leading-tight flex items-center flex-wrap gap-2">
+                                            <p id="doc-title-<?php echo $index; ?>" class="text-sm font-semibold text-gray-800 mb-1 leading-tight flex items-center flex-wrap gap-2">
                                                 <?php echo htmlspecialchars($req['requirement_name']); ?>
                                                 <?php if(isset($req['status']) && $req['status'] === 'OK'): ?>
-                                                    <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] uppercase tracking-wider font-bold rounded">
+                                                    <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] uppercase tracking-wider font-bold rounded ok-badge">
                                                         <i class="fas fa-check-circle mr-1"></i> OK
                                                     </span>
                                                 <?php endif; ?>
                                             </p>
-                                            <button type="button" onclick="openDocumentModal(<?php echo $index; ?>)" class="inline-flex items-center text-xs font-bold text-emerald-600 hover:text-emerald-800 transition">
-                                                <i class="fas fa-search-plus mr-1"></i> View Document
-                                            </button>
+                                            <div class="mt-1.5 flex items-center gap-3">
+                                                <button type="button" onclick="openDocumentModal(<?php echo $index; ?>)" class="inline-flex items-center text-xs font-bold text-emerald-600 hover:text-emerald-800 transition">
+                                                    <i class="fas fa-search-plus mr-1"></i> Preview
+                                                </button>
+                                                <a href="../<?php echo htmlspecialchars($req['file_path']); ?>" target="_blank" class="inline-flex items-center text-xs font-bold text-blue-600 hover:text-blue-800 transition">
+                                                    <i class="fas fa-external-link-alt mr-1"></i> Open Direct
+                                                </a>
+                                            </div>
                                         </div>
                                     </li>
                                 <?php endforeach; ?>
@@ -279,7 +288,6 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
                         <?php endif; ?>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -293,8 +301,19 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
                 </button>
             </div>
             
-            <div class="flex-1 bg-gray-200 relative p-2">
-                <iframe id="modalDocViewer" src="" class="w-full h-full border-0 rounded bg-white shadow-inner"></iframe>
+            <div class="flex-1 bg-gray-200 relative p-4 flex items-center justify-center overflow-auto">
+                <div id="modalAlert" class="hidden absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded shadow-lg font-bold text-sm z-10 transition">
+                    <i class="fas fa-check mr-2"></i> Marked as OK
+                </div>
+                
+                <iframe id="modalPdfViewer" src="" class="w-full h-full border-0 rounded bg-white shadow-inner hidden"></iframe>
+                <img id="modalImgViewer" src="" alt="Document Preview" class="max-w-full max-h-full object-contain hidden rounded shadow-sm">
+                
+                <div id="modalUnsupported" class="hidden text-center">
+                    <i class="fas fa-file-download text-5xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-600 font-semibold mb-2">Preview not available for this file type.</p>
+                    <a id="modalDownloadLink" href="" target="_blank" class="inline-block bg-emerald-600 text-white px-4 py-2 rounded shadow hover:bg-emerald-700 transition">Open / Download File</a>
+                </div>
             </div>
             
             <div class="px-6 py-4 border-t flex justify-between items-center bg-white">
@@ -302,9 +321,9 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
                     <i class="fas fa-chevron-left mr-2"></i> Previous
                 </button>
                 
-                <form method="POST" action="" id="markOkForm" class="m-0 flex items-center">
+                <form id="markOkForm" onsubmit="markDocumentOk(event)" class="m-0 flex items-center">
                     <input type="hidden" name="file_id" id="modalFileId" value="">
-                    <button type="submit" name="mark_doc_ok" id="markOkBtn" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold transition shadow-sm flex items-center">
+                    <button type="submit" id="markOkBtn" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold transition shadow-sm flex items-center">
                         <i class="fas fa-check-circle mr-2"></i> Mark as OK
                     </button>
                 </form>
@@ -317,54 +336,83 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
     </div>
 
     <script>
-        // Pass PHP array of requirements to Javascript
+        // Data parsed directly from PHP
         const documentsList = <?php echo json_encode($requirements); ?>;
         let currentIndex = 0;
 
         const modal = document.getElementById('documentModal');
-        const viewer = document.getElementById('modalDocViewer');
+        
+        // Viewer Elements
+        const pdfViewer = document.getElementById('modalPdfViewer');
+        const imgViewer = document.getElementById('modalImgViewer');
+        const unsupportedViewer = document.getElementById('modalUnsupported');
+        const downloadLink = document.getElementById('modalDownloadLink');
+        
         const title = document.getElementById('modalDocTitle');
         const fileIdInput = document.getElementById('modalFileId');
         const prevBtn = document.getElementById('prevDocBtn');
         const nextBtn = document.getElementById('nextDocBtn');
         const markOkBtn = document.getElementById('markOkBtn');
+        const modalAlert = document.getElementById('modalAlert');
 
         function openDocumentModal(index) {
             currentIndex = index;
             updateModalContent();
             modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            document.body.classList.add('modal-active');
         }
 
         function closeDocumentModal() {
             modal.classList.add('hidden');
-            viewer.src = ""; // Clear iframe source
-            document.body.style.overflow = 'auto'; // Restore scrolling
+            pdfViewer.src = ""; 
+            imgViewer.src = "";
+            document.body.classList.remove('modal-active');
+            modalAlert.classList.add('hidden');
         }
 
         function updateModalContent() {
             if (documentsList.length === 0) return;
             
             const currentDoc = documentsList[currentIndex];
-            
-            // Set Header and Source
             title.innerText = currentDoc.requirement_name;
-            viewer.src = "../" + currentDoc.file_path; // Assuming path relative to parent dir
             
+            // Hide all viewers initially
+            pdfViewer.classList.add('hidden');
+            imgViewer.classList.add('hidden');
+            unsupportedViewer.classList.add('hidden');
+            pdfViewer.src = "";
+            imgViewer.src = "";
+
+            // ADDING "../" HERE: If your file is inside a folder (e.g., /admin/), 
+            // it steps out to find the "uploads/" folder.
+            const filePath = "../" + currentDoc.file_path;
+
+            // Display logic based on file extension
+            if (filePath) {
+                const ext = filePath.split('.').pop().toLowerCase();
+                
+                if (ext === 'pdf') {
+                    pdfViewer.src = filePath;
+                    pdfViewer.classList.remove('hidden');
+                } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                    imgViewer.src = filePath;
+                    imgViewer.classList.remove('hidden');
+                } else {
+                    downloadLink.href = filePath;
+                    unsupportedViewer.classList.remove('hidden');
+                }
+            } else {
+                unsupportedViewer.classList.remove('hidden');
+            }
+
             // Set File ID for the "Mark OK" form
             fileIdInput.value = currentDoc.file_id;
 
-            // Handle "Mark OK" button state visually
+            // Handle "Mark OK" button visual state
             if (currentDoc.status && currentDoc.status === 'OK') {
-                markOkBtn.innerHTML = '<i class="fas fa-check-double mr-2"></i> Already Marked OK';
-                markOkBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
-                markOkBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                markOkBtn.disabled = true;
+                setButtonAsMarked();
             } else {
-                markOkBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Mark as OK';
-                markOkBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
-                markOkBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                markOkBtn.disabled = false;
+                setButtonAsUnmarked();
             }
 
             // Handle Navigation Buttons Status
@@ -376,6 +424,7 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
             if (currentIndex < documentsList.length - 1) {
                 currentIndex++;
                 updateModalContent();
+                modalAlert.classList.add('hidden');
             }
         }
 
@@ -383,6 +432,68 @@ if (in_array($status, ['approved', 'completed', 'issued'])) {
             if (currentIndex > 0) {
                 currentIndex--;
                 updateModalContent();
+                modalAlert.classList.add('hidden');
+            }
+        }
+
+        function setButtonAsMarked() {
+            markOkBtn.innerHTML = '<i class="fas fa-check-double mr-2"></i> Already Marked OK';
+            markOkBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+            markOkBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+            markOkBtn.disabled = true;
+        }
+
+        function setButtonAsUnmarked() {
+            markOkBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Mark as OK';
+            markOkBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+            markOkBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+            markOkBtn.disabled = false;
+        }
+
+        // Handle Form Submission via AJAX Fetch API
+        async function markDocumentOk(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('ajax_mark_ok', '1');
+            formData.append('file_id', fileIdInput.value);
+
+            try {
+                // Keep the button text as "Saving..."
+                markOkBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+                markOkBtn.disabled = true;
+
+                const response = await fetch('', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update Javascript Object memory
+                    documentsList[currentIndex].status = 'OK';
+                    
+                    // Update Modal Button View
+                    setButtonAsMarked();
+
+                    // Show success banner temporarily inside modal
+                    modalAlert.classList.remove('hidden');
+                    setTimeout(() => modalAlert.classList.add('hidden'), 3000);
+
+                    // Dynamically update the background list item badge
+                    const titleElement = document.getElementById('doc-title-' + currentIndex);
+                    if (titleElement && !titleElement.querySelector('.ok-badge')) {
+                        titleElement.innerHTML += ' <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] uppercase tracking-wider font-bold rounded ok-badge"><i class="fas fa-check-circle mr-1"></i> OK</span>';
+                    }
+                } else {
+                    alert("Error marking document: " + (data.error || "Unknown Error"));
+                    setButtonAsUnmarked();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert("A connection error occurred. Please try again.");
+                setButtonAsUnmarked();
             }
         }
     </script>
