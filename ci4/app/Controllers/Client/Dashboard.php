@@ -31,6 +31,7 @@ class Dashboard extends BaseController
             'pendingApps'    => $pendingApps,
             'approvedApps'   => $approvedApps,
             'notifications'  => $notifications,
+            'notification_count' => count($notifications),
             'requirements'   => $requirements,
             'profilePicture' => $user['profile_picture'] ?? null,
         ];
