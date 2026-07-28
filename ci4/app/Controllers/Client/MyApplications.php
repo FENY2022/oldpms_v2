@@ -89,7 +89,10 @@ class MyApplications extends BaseController
         }
 
         // Fetch applications with timestamps
-        $applications = $appModel->where('client_id', $clientId)->orderBy('app_id', 'DESC')->findAll();
+        $applications = $appModel->where('client_id', $clientId)
+            ->select('permit_applications.*, TIMESTAMPDIFF(SECOND, date_submitted, NOW()) as seconds_elapsed')
+            ->orderBy('app_id', 'DESC')
+            ->findAll();
 
         // Fetch logs and files for all applications
         $logs = [];
