@@ -63,10 +63,10 @@ class MyApplications extends BaseController
                             }
 
                             $logModel->insert(['app_id' => $appId, 'action' => 'Document Updated', 'remarks' => 'Requirement document(s) were replaced/re-uploaded by the applicant.']);
-                            return redirect()->to('/client/applications')->with('success', 'Document successfully updated!');
+                            return redirect()->to(base_url('client/applications'))->with('success', 'Document successfully updated!');
                         }
                     } else {
-                        return redirect()->to('/client/applications')->with('error', 'Re-upload time limit has expired.');
+                        return redirect()->to(base_url('client/applications'))->with('error', 'Re-upload time limit has expired.');
                     }
                 }
             } elseif ($action === 'resubmit_app') {
@@ -83,7 +83,7 @@ class MyApplications extends BaseController
                     $formattedId = '#' . str_pad($appId, 5, '0', STR_PAD_LEFT);
                     $emailService->sendApplicationResubmittedEmail('venzonanthonie@gmail.com', $applicantName, $formattedId);
 
-                    return redirect()->to('/client/applications')->with('success', 'Application successfully resubmitted for evaluation!');
+                    return redirect()->to(base_url('client/applications'))->with('success', 'Application successfully resubmitted for evaluation!');
                 }
             }
         }

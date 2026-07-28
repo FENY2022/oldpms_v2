@@ -16,7 +16,7 @@ class CreateApplication extends BaseController
         $user = $userModel->find($clientId);
 
         if (!$user) {
-            return redirect()->to('/client/dashboard')->with('error', 'User not found.');
+            return redirect()->to(base_url('client/dashboard'))->with('error', 'User not found.');
         }
 
         if ($this->request->is('post')) {
@@ -95,7 +95,7 @@ class CreateApplication extends BaseController
                 ]);
 
                 $db->completeTrans();
-                return redirect()->to('/client/applications')->with('success', 'Application submitted successfully!');
+                return redirect()->to(base_url('client/applications'))->with('success', 'Application submitted successfully!');
             } catch (\Exception $e) {
                 $db->transRollback();
                 return redirect()->back()->withInput()->with('error', $e->getMessage());

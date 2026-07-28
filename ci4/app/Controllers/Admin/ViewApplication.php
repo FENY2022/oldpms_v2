@@ -10,7 +10,7 @@ class ViewApplication extends BaseController
     public function index($appId = null)
     {
         if (!$appId) {
-            return redirect()->to('/admin/applications')->with('error', 'Invalid Application ID.');
+            return redirect()->to(base_url('admin/applications'))->with('error', 'Invalid Application ID.');
         }
 
         $userModel = model('UserClientModel');
@@ -80,7 +80,7 @@ class ViewApplication extends BaseController
         ", [$appId])->getRowArray();
 
         if (!$application) {
-            return redirect()->to('/admin/applications')->with('error', 'Application not found.');
+            return redirect()->to(base_url('admin/applications'))->with('error', 'Application not found.');
         }
 
         // Fetch files grouped by requirement

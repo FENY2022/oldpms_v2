@@ -36,7 +36,7 @@ class Login extends BaseController
                     'logged_in'  => true,
                 ]);
 
-                return $this->response->setJSON(['status' => 'success', 'message' => 'Client login successful! Redirecting...', 'redirect' => '/client/dashboard']);
+                return $this->response->setJSON(['status' => 'success', 'message' => 'Client login successful! Redirecting...', 'redirect' => base_url('client/dashboard')]);
             }
 
             // 2. Check DENR User
@@ -55,12 +55,12 @@ class Login extends BaseController
                     'logged_in'     => true,
                 ]);
 
-                return $this->response->setJSON(['status' => 'success', 'message' => 'DENR Staff login successful! Redirecting...', 'redirect' => '/admin/dashboard']);
+                return $this->response->setJSON(['status' => 'success', 'message' => 'DENR Staff login successful! Redirecting...', 'redirect' => base_url('admin/dashboard')]);
             }
 
             return $this->response->setJSON(['status' => 'error', 'message' => 'Invalid email/username or password.']);
         }
 
-        return redirect()->to('/');
+        return redirect()->to(base_url('/'));
     }
 }

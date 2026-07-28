@@ -13,7 +13,7 @@ class AuthFilter implements FilterInterface
         $session = session();
 
         if (!$session->get('logged_in')) {
-            return redirect()->to('/')->with('error', 'Please log in to access this page.');
+            return redirect()->to(base_url('/'))->with('error', 'Please log in to access this page.');
         }
 
         if ($arguments !== null && !empty($arguments)) {
@@ -21,10 +21,10 @@ class AuthFilter implements FilterInterface
             $requiredType = $arguments[0] ?? '';
 
             if ($requiredType === 'client' && $userType !== 'client') {
-                return redirect()->to('/admin/dashboard');
+                return redirect()->to(base_url('admin/dashboard'));
             }
             if ($requiredType === 'admin' && $userType !== 'denr_user') {
-                return redirect()->to('/client/dashboard');
+                return redirect()->to(base_url('client/dashboard'));
             }
         }
     }

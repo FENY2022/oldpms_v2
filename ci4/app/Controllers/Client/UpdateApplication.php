@@ -13,7 +13,7 @@ class UpdateApplication extends BaseController
         $app = $appModel->where('app_id', $appId)->where('client_id', $clientId)->first();
 
         if (!$app) {
-            return redirect()->to('/client/applications')->with('error', 'Application not found.');
+            return redirect()->to(base_url('client/applications'))->with('error', 'Application not found.');
         }
 
         if ($this->request->is('post')) {
@@ -42,7 +42,7 @@ class UpdateApplication extends BaseController
                 ]);
 
                 $db->completeTrans();
-                return redirect()->to('/client/applications')->with('success', 'Application updated successfully!');
+                return redirect()->to(base_url('client/applications'))->with('success', 'Application updated successfully!');
             } catch (\Exception $e) {
                 $db->transRollback();
                 return redirect()->back()->withInput()->with('error', $e->getMessage());

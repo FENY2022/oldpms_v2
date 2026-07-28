@@ -106,6 +106,6 @@ class ManageRequirements extends BaseController
             $reqModel->delete($id);
             return redirect()->back()->with('success', 'Requirement deleted successfully!');
         }
-        return redirect()->to('/admin/manage-requirements');
+        return redirect()->to(base_url('admin/manage-requirements'));
     }
 }

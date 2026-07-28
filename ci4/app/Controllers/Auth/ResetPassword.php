@@ -48,14 +48,14 @@ class ResetPassword extends BaseController
         }
 
         if (empty($token) || empty($email)) {
-            return redirect()->to('/forgot-password')->with('error', 'Invalid reset link.');
+            return redirect()->to(base_url('forgot-password'))->with('error', 'Invalid reset link.');
         }
 
         $passwordResetModel = model('PasswordResetModel');
         $validToken = $passwordResetModel->where('email', $email)->where('token', $token)->where('expires_at >', date('Y-m-d H:i:s'))->first();
 
         if (!$validToken) {
-            return redirect()->to('/forgot-password')->with('error', 'Invalid or expired reset token.');
+            return redirect()->to(base_url('forgot-password'))->with('error', 'Invalid or expired reset token.');
         }
 
         return view('auth/reset_password', ['token' => $token, 'email' => $email, 'error' => null, 'success' => null]);

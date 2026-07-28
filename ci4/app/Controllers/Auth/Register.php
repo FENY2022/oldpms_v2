@@ -32,17 +32,17 @@ class Register extends BaseController
             if (preg_match('@[^\w]@', $unhashedPassword)) $score++;
 
             if ($unhashedPassword !== $confirmPassword) {
-                return redirect()->to('/')->withInput()->with('error', 'Passwords do not match.');
+                return redirect()->to(base_url('/'))->withInput()->with('error', 'Passwords do not match.');
             } elseif (strlen($unhashedPassword) < 8) {
-                return redirect()->to('/')->withInput()->with('error', 'Password must be at least 8 characters.');
+                return redirect()->to(base_url('/'))->withInput()->with('error', 'Password must be at least 8 characters.');
             } elseif ($score < 3) {
-                return redirect()->to('/')->withInput()->with('error', 'Password is too weak. Please use a stronger password.');
+                return redirect()->to(base_url('/'))->withInput()->with('error', 'Password is too weak. Please use a stronger password.');
             }
 
             // Check email exists
             $userModel = model('UserClientModel');
             if ($userModel->where('email', $email)->countAllResults() > 0) {
-                return redirect()->to('/')->withInput()->with('error', 'Email already registered. Please use a different email.');
+                return redirect()->to(base_url('/'))->withInput()->with('error', 'Email already registered. Please use a different email.');
             }
 
             // Handle file uploads
@@ -78,12 +78,12 @@ class Register extends BaseController
                 $verifyLink = base_url("/verify?token=$verificationToken&email=" . urlencode($email));
                 $emailService->sendVerificationEmail($email, $fname, $verifyLink);
 
-                return redirect()->to('/')->with('success', 'Registration Successful! Check your email for the verification link.');
+                return redirect()->to(base_url('/'))->with('success', 'Registration Successful! Check your email for the verification link.');
             }
 
-            return redirect()->to('/')->withInput()->with('error', 'Registration Failed. Please try again.');
+            return redirect()->to(base_url('/'))->withInput()->with('error', 'Registration Failed. Please try again.');
         }
 
-        return redirect()->to('/');
+        return redirect()->to(base_url('/'));
     }
 }
