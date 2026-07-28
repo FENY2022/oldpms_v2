@@ -18,10 +18,12 @@
     <title>Review Application #<?= str_pad($appId, 5, '0', STR_PAD_LEFT) ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" href="<?= base_url('logo/denr_logo.png') ?>" type="image/x-icon">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
         
+        /* Modal Background Scroll Prevention */
         .modal-active { overflow: hidden; }
     </style>
 </head>
@@ -33,6 +35,7 @@
                 <a href="<?= base_url('/admin/applications') ?>" class="h-10 w-10 bg-white rounded-full flex items-center justify-center text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 border border-gray-200 transition shadow-sm">
                     <i class="fas fa-arrow-left"></i>
                 </a>
+                <img src="<?= base_url('logo/denr_logo.png') ?>" alt="DENR Logo" class="h-10 w-10">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-800">Review Application</h1>
                     <p class="text-sm text-gray-500">Application ID: #<?= str_pad($appId, 5, '0', STR_PAD_LEFT) ?></p>

@@ -9,7 +9,7 @@ class ForgotPassword extends BaseController
 {
     public function index()
     {
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $email = $this->request->getPost('email');
             $userModel = model('UserClientModel');
             $user = $userModel->where('email', $email)->first();

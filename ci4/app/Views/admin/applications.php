@@ -6,6 +6,7 @@
     <title>Applications | O-LDPMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" href="<?= base_url('logo/denr_logo.png') ?>" type="image/x-icon">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -14,9 +15,12 @@
 <body class="bg-slate-50 p-8">
     
     <div class="mb-8 flex justify-between items-end">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-800">Permit Applications</h1>
-            <p class="text-gray-500 mt-1 text-sm">Manage and review submitted applications under your office's jurisdiction.</p>
+        <div class="flex items-center gap-4">
+            <img src="<?= base_url('logo/denr_logo.png') ?>" alt="DENR Logo" class="h-12 w-12">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Permit Applications</h1>
+                <p class="text-gray-500 mt-1 text-sm">Manage and review submitted applications under your office's jurisdiction.</p>
+            </div>
         </div>
         <div>
             <button class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg shadow-sm text-sm font-semibold transition">

@@ -11,7 +11,7 @@ class ManageUsers extends BaseController
         $denrUserModel = model('DenrUserModel');
         $roleModel = model('DenrRoleModel');
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $userId = $this->request->getPost('user_id');
             $newRole = $this->request->getPost('user_role_id');
             $newPassword = $this->request->getPost('password');

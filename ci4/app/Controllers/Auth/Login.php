@@ -8,7 +8,7 @@ class Login extends BaseController
 {
     public function index()
     {
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $this->response->setHeader('Content-Type', 'application/json');
 
             $loginId = trim($this->request->getPost('email'));

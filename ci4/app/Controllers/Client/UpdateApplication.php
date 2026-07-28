@@ -16,7 +16,7 @@ class UpdateApplication extends BaseController
             return redirect()->to('/client/applications')->with('error', 'Application not found.');
         }
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             try {
                 $db = \Config\Database::connect();
                 $db->transException(true)->start();

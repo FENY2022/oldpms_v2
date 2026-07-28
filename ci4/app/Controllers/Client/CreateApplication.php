@@ -19,7 +19,7 @@ class CreateApplication extends BaseController
             return redirect()->to('/client/dashboard')->with('error', 'User not found.');
         }
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             try {
                 $db = \Config\Database::connect();
                 $db->transException(true)->start();

@@ -16,7 +16,7 @@ class MyApplications extends BaseController
         $fileModel = model('PermitRequirementFileModel');
         $reqModel = model('RequirementModel');
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $action = $this->request->getPost('action');
 
             if ($action === 'reupload_file') {

@@ -6,6 +6,7 @@
     <title>My Applications</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" href="<?= base_url('logo/denr_logo.png') ?>" type="image/x-icon">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -31,9 +32,12 @@
     <?php endif; ?>
 
     <div class="mb-8 flex justify-between items-center">
-        <div>
-            <h2 class="text-3xl font-extrabold text-gray-900">My Applications</h2>
-            <p class="text-gray-500 mt-1">Track the status and history of your submitted permits.</p>
+        <div class="flex items-center gap-4">
+            <img src="<?= base_url('logo/denr_logo.png') ?>" alt="DENR Logo" class="h-12 w-12">
+            <div>
+                <h2 class="text-3xl font-extrabold text-gray-900">My Applications</h2>
+                <p class="text-gray-500 mt-1">Track the status and history of your submitted permits.</p>
+            </div>
         </div>
         
         <button onclick="window.location.reload();" class="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition shadow-sm">

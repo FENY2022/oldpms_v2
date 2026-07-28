@@ -11,7 +11,7 @@ class Profile extends BaseController
         $clientId = session()->get('client_id');
         $userModel = model('UserClientModel');
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $firstname = htmlspecialchars($this->request->getPost('firstname'));
             $midName = htmlspecialchars($this->request->getPost('mid_name'));
             $lastname = htmlspecialchars($this->request->getPost('lastname'));

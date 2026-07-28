@@ -11,7 +11,7 @@ class ResetPassword extends BaseController
         $token = $this->request->getGet('token');
         $email = $this->request->getGet('email');
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $password = $this->request->getPost('password');
             $confirmPassword = $this->request->getPost('confirm_password');
             $email = $this->request->getPost('email');

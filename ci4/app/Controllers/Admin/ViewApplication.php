@@ -20,7 +20,7 @@ class ViewApplication extends BaseController
         $reqModel = model('RequirementModel');
 
         // Handle AJAX file status update
-        if ($this->request->getMethod() === 'post' && $this->request->getPost('ajax_update_file')) {
+        if ($this->request->is('post') && $this->request->getPost('ajax_update_file')) {
             $this->response->setHeader('Content-Type', 'application/json');
             $fileId = intval($this->request->getPost('file_id'));
             $newStatus = $this->request->getPost('status');
@@ -31,7 +31,7 @@ class ViewApplication extends BaseController
         }
 
         // Handle status update
-        if ($this->request->getMethod() === 'post' && $this->request->getPost('update_application')) {
+        if ($this->request->is('post') && $this->request->getPost('update_application')) {
             $newStatus = $this->request->getPost('status');
             $remarks = trim($this->request->getPost('remarks'));
             $userName = session()->get('name') ?? 'System User';

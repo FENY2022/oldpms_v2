@@ -10,7 +10,7 @@ class Register extends BaseController
 {
     public function index()
     {
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $fname = htmlspecialchars($this->request->getPost('firstname') ?? '');
             $mname = htmlspecialchars($this->request->getPost('mid_name') ?? '');
             $lname = htmlspecialchars($this->request->getPost('lastname') ?? '');

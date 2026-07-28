@@ -10,7 +10,7 @@ class ManageRequirements extends BaseController
     {
         $reqModel = model('RequirementModel');
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $action = $this->request->getPost('action');
 
             if ($action === 'add') {
